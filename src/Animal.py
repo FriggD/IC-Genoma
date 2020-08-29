@@ -23,3 +23,4 @@ class Animal:
 
     def toArray(self):
         return [";".join(self.animal_id), self.sexo, self.nasc, self.id_pai, self.id_mae, self.avo_materno, ";".join(self.genoma_files)]
+

@@ -10,6 +10,9 @@
 
 import pandas
 import csv
+
+DATA_FOLDER = '../Data'
+
 # import sys
 # import numpy as np
 # import math
@@ -21,10 +24,13 @@ class AnimaisCtrl:
     def __init__(self):
         #cabeçalho da tabela a ser gerado no arquivo csv
         self.headers = ['Animal_id', 'sexo', 'data_nascimento', 'id_pai', 'id_mae', 'avo_materno', 'tem_filhos', 'genoma_files']
+        
         #Conjunto de dados recebe o que o 'pandas' lê do arquivo csv que está especifícado no caminho, utilizando o separados (,).
-        dataset = pandas.read_csv('../../dados/todos_animais.csv', sep=',', names=self.headers)
+        dataset = pandas.read_csv(DATA_FOLDER+'/application/Animais.csv', sep=',', names=self.headers)
+        
         #Um array de dados recebe os valores que estão no conjunto de dados do arquivo acima.
         dataArr = dataset.values
+
         #iniciando o array para poder utilizar o 'append()'.
         self.lista_animais = []
 
