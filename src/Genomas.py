@@ -1,10 +1,9 @@
 import pandas
 import csv
 
-from src.AnimaisCtrl import DATA_FOLDER
+from AnimaisCtrl import DATA_FOLDER
 
 class Genomas:
-
     def __init__(self):
         self.headers = ['Genoma']
 
@@ -19,6 +18,13 @@ class Genomas:
         for linha in dataArr[1:,]:
             self.lista_genomas.append( Genoma(linha) )
 
+    def addGenoma(self, id, type, folder):
+        new_genoma = Genoma([id, type, folder])
+        self.lista_genomas.append( new_genoma )
+
+        genoma_file = csv.writer(open(DATA_FOLDER+'/Application/genoma_types', "a"))
+        genoma_file.writerow( new_genoma.toArray() )
+
 
 class Genoma:
     def __init__(self, dataArr):
@@ -28,4 +34,7 @@ class Genoma:
 
     def toOptionString(self):
         return "{} => {}".format(self.id, self.type)
+
+    def toArray(self):
+        return [self.id, self.type, self.folder]
 
