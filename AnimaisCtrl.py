@@ -20,7 +20,7 @@ class AnimaisCtrl:
     # Classe construtor
     def __init__(self):
         #cabeçalho da tabela a ser gerado no arquivo csv
-        self.headers = ['Animal_id', 'sexo','id_pai', 'id_mae', 'tem_filhos']
+        self.headers = ['Animal_id', 'sexo', 'data_nascimento', 'id_pai', 'id_mae', 'avo_materno', 'tem_filhos', 'genoma_files']
         #Conjunto de dados recebe o que o 'pandas' lê do arquivo csv que está especifícado no caminho, utilizando o separados (,).
         dataset = pandas.read_csv('../../dados/todos_animais.csv', sep=',', names=self.headers)
         #Um array de dados recebe os valores que estão no conjunto de dados do arquivo acima.
@@ -37,7 +37,7 @@ class AnimaisCtrl:
         #para cada animal na lista de animais
         for animal in self.lista_animais:
             #Mostra as informações do animal. Classe que está no Animal.py
-            animal.mostrar_informacoes()
+            print(animal)
 
     #Sempre que um animal aparecer na coluna dos pais
     def exportarPais(self):
