@@ -9,14 +9,16 @@ PATH_75K = 7
 PATH_90K = 8
 
 class Animal:
+    cur_AutoIncrement = 0
+
     def __init__(self, dataArr):
-        self.animal_id      = dataArr[0].split(sep=";")
+        self.animal_id      = str(dataArr[0]).split(sep=";")
         self.sexo           = dataArr[1]
         self.nasc           = dataArr[2]
         self.id_pai         = dataArr[3]
         self.id_mae         = dataArr[4]
         self.avo_materno    = dataArr[5]
-        self.genoma_files   = dataArr[6].split(sep=";")
+        self.genoma_files   = str(dataArr[6]).split(sep=";")
 
     def __str__(self):
         return 'Animal {}, sexo {}, nascido em {}, pai: {}, mãe: {}'.format(self.animal_id, self.sexo, self.nasc, self.id_pai, self.id_mae)

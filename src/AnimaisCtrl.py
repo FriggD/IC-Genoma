@@ -8,7 +8,7 @@
 #      2.5. Gerar genoma unico animal
 #   3. Instanciação
 
-import pandas
+import pandas as pd
 import csv
 
 DATA_FOLDER = '../Data'
@@ -17,25 +17,26 @@ DATA_FOLDER = '../Data'
 # import numpy as np
 # import math
 
-from Animal import *
+from src.Animal import *
+# from src.Genomas import Genomas
 
 class AnimaisCtrl:
     # Classe construtor
     def __init__(self):
+
+        #TODO: Verificar se os arquivos utilizados existem; Se não existirem, crie-os
+
         #cabeçalho da tabela a ser gerado no arquivo csv
         self.headers = ['Animal_id', 'sexo', 'data_nascimento', 'id_pai', 'id_mae', 'avo_materno', 'tem_filhos', 'genoma_files']
         
         #Conjunto de dados recebe o que o 'pandas' lê do arquivo csv que está especifícado no caminho, utilizando o separados (,).
-        dataset = pandas.read_csv(DATA_FOLDER+'/application/Animais.csv', sep=',', names=self.headers)
-        
-        #Um array de dados recebe os valores que estão no conjunto de dados do arquivo acima.
-        dataArr = dataset.values
-
+        self.animais_DF = pd.read_csv(DATA_FOLDER+'/Application/Animais.csv', sep=',', names=self.headers)
+           
         #iniciando o array para poder utilizar o 'append()'.
         self.lista_animais = []
 
         #Para cada linha no array de dados, excluíndo o cabeçalho
-        for linha in dataArr[1:,]:
+        for linha in self.animais_DF.values:
             #criando uma instancia de animal para cada linha na lista
             self.lista_animais.append(Animal(linha))
 
@@ -45,63 +46,25 @@ class AnimaisCtrl:
             #Mostra as informações do animal. Classe que está no Animal.py
             print(animal)
 
-    #Sempre que um animal aparecer na coluna dos pais
-    def exportarPais(self):
-        #Abrir o arquivo dos pais na pasta de outputs no modo escrita
-        f = csv.writer(open('Output/pais.csv', "w"))
-        #escreve o cabeçalho
-        f.writerow(self.headers)
-        #inicializa o array
-        Pais_inseridosArr = []
-        #Para cada pai na lista de animais
-        for candidato_pai in self.lista_animais:
-            #para cada filho na lista de animais
-            for candidato_filho in self.lista_animais:              
-
-                #  Para cada Id do pai, verifica se ele é pai do candidato_filho
-                for Id_pai in candidato_pai.animal_id:
-                    if  Id_pai == candidato_filho.id_pai:
-                        #  È PAI!
-                        if candidato_pai.animal_id not in Pais_inseridosArr:
-                            # Se o pai ainda não foi inserido na lista de pais
-                            f.writerow(candidato_pai.toArray())
-                            Pais_inseridosArr.append(candidato_pai.animal_id)
-    
-    def exportarMaes(self):
-        f = csv.writer(open('Output/maes.csv', "w"))
-        f.writerow(self.headers)
-
-        Maes_inseridasArr = []
-
-        for candidata_mae in self.lista_animais:
-            for candidato_filho in self.lista_animais:              
-
-                #  Para cada Id da mae, verifica se ela é mae do candidato_filho
-                for Id_mae in candidata_mae.animal_id:
-                    if  Id_mae == candidato_filho.id_mae:
-                        #  È MÃE!
-                        if candidata_mae.animal_id not in Maes_inseridasArr:
-                            # Se a mae ainda não foi inserida na lista de maes
-                            f.writerow(candidata_mae.toArray())
-                            Maes_inseridasArr.append(candidata_mae.animal_id)
-
-    #
-    #def gerarGenomaUnicoAnimal(self):
-
     #Para não duplicar dados na tabela 'todos_animais'
     def recuperarAnimalPeloNome(self, nome):
-        animal_encontrado = 0
-
         # Buscar o animal na lista de animais que já tenho
         for animal in self.lista_animais:
             if nome in animal.animal_id:
-                 animal_encontrado = animal
+                return animal      
 
-        # Se encontrado, retorna o animal
-        if animal_encontrado:
-            return animal_encontrado
+        # Se não for encontrado, retorna False
+        return False
 
-        # Se não, retorna False
+    #Para não duplicar dados na tabela 'todos_animais'
+    def removerAnimalPeloNome(self, nome):
+        # Buscar o animal na lista de animais que já tenho
+        for animal in self.lista_animais:
+            if nome in animal.animal_id:
+                self.lista_animais.remove(Animal)
+                return True 
+
+        # Se não for encontrado, retorna False
         return False
 
     def inserirNovoAnimal(self, animal):
@@ -113,26 +76,34 @@ class AnimaisCtrl:
 
         ###### Criar novo animal ######
         #  Adicionar a linha do animal na planilha tabela
-        animais_file = csv.writer(open('../../dados/todos_animais.csv', "a"))
-        animais_file.writerow(animal.toArray())
-        
+        animal_row = pd.Series(animal.toArray())
+        self.animais_DF = self.animais_DF.append( animal_row, ignore_index=True)
+
+        with open(DATA_FOLDER+'/Application/Animais.csv', 'w') as f:
+            self.animais_DF.to_csv(f, header=0)
+
         #  Adicionar o animal à lista de animais
         self.lista_animais.append(animal)
 
+    def atualizarAnimalCsv(self, animal):
+
+        self.animais_DF = self.animais_DF[self.animais_DF.Animal_id != animal.animal_id]
+
+
+        self.animais_DF.at(animal.animal_nr, animal.toArray())
+        with open(DATA_FOLDER+'/Application/Animais.csv', 'w') as f:
+            self.animais_DF.to_csv(f, header=0)
+            
+
+
     # Extrai o genoma, e adiciona os animais novos na minha lista de animais
-    def extrairGenoma(self):
-
-        genoma_filename = input("Qual o endereço do arquivo do genoma? \n")
-
-        genoma_type = input("Este arquivo genoma é de qual tipo? \n  1: 35k; \n  2: 50k; \n  3: 75k; \n  4: 90k;\nOpção:")
-        
-        checagem_headers = input("Verifique se as colunas da tabela estão configurada da seguinte forma:\n  ['SNP_Name','Chr','Position','Sample_ID', 'Allele1 - AB', 'Allele2 - AB']\n  Em formato csv separado por ,\n(y/n): ")
-                
+    def extrairGenoma(self, genoma_filename, genoma_type):
+               
         #cabeçalho da tabela a ser gerado no arquivo csv
         headers = ['SNP_Name','Chr','Position','Sample_ID', 'Allele1 - AB', 'Allele2 - AB']
         
         #Conjunto de dados recebe o que o 'pandas' lê do arquivo csv que está especifícado no caminho, utilizando o separados (,).
-        dataset = pandas.read_csv('genoma_filename', sep=',', names=headers)
+        dataset = pd.read_csv(DATA_FOLDER+'/Input/'+genoma_filename, sep=',', names=headers)
 
         #Um array de dados recebe os valores que estão no conjunto de dados do arquivo acima.
         dataArr = dataset.values
@@ -146,18 +117,42 @@ class AnimaisCtrl:
             
             if linha[3] != aux_nome:
                 aux_nome = linha[3]
-                
+
+                # Verifica se o Animal já está na lista de animais
+                animal = self.recuperarAnimalPeloNome(aux_nome)
+
+                if animal:
+                    # Se estiver na lista de animais, verifica se o tipo do genoma está incluído em genoma_files do animal
+                    
+                    if not(genoma_type in animal.genoma_files):
+                        #  Se o genoma_Type não estiver no genoma_files do animal, o inclui
+                        animal.genoma_files.append(genoma_type)
+                        self.atualizarAnimalCsv(animal)
+
+                else:
+                    # Se animal não existe, inicializa seu valor
+                    self.inserirNovoAnimal( Animal([linha[3], None, None, None, None, None, str(genoma_type)]) )
+
                 #arquivo do proprio animal, do genoma
-                animal_file = csv.writer(open('Output/Infos_animais/'+ linha[3] +'.csv', "w"))
+                try:
+                    f_animal_file.close()
+                except:
+                    print("\n")
+
+                f_animal_file = open(DATA_FOLDER + "/Application/Genomas/"+ linha[3] +'.csv', "w")
+                animal_file = csv.writer(f_animal_file)
 
             animal_file.writerow(linha)
 
-            print(linha[3])
+            
+
+        if f_animal_file:
+            f_animal_file.close()
 
 
-animais_obj = AnimaisCtrl()
+# animais_obj = AnimaisCtrl()
 
-animais_obj.extrairGenoma()
+# animais_obj.extrairGenoma()
 
 
 

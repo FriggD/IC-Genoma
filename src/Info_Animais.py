@@ -19,7 +19,8 @@ class Informacoes:
         self.lista_info_animal = []
 
         #cria uma instancia
-        animais_file = csv.writer(open('../../dados/todos_animais.csv', "a"))
+        f_animais_file = open('../../dados/todos_animais.csv', "a")
+        animais_file = csv.writer(f_animais_file)
 
         aux_nome = 0
         #Para cada linha no array de dados, excluíndo o cabeçalho
@@ -28,12 +29,19 @@ class Informacoes:
             if linha[3] != aux_nome:
                 aux_nome = linha[3]
                 animais_file.writerow([linha[3],None,None,None,None, 'Output/Infos_animais/'+ linha[3] +'.csv'])
+
                 #arquivo do proprio animal, do genoma
-                animal_file = csv.writer(open('Output/Infos_animais/'+ linha[3] +'.csv', "w"))
+                if f_animal_file:
+                    f_animal_file.close()
+                    
+                f_animal_file = open('Output/Infos_animais/'+ linha[3] +'.csv', "w")
+                animal_file = csv.writer(f_animal_file)
 
             animal_file.writerow(linha)
 
             print(linha[3])
+
+        f_animais_file.close()
 
     def extrairInfos(self):
          #Abrir o arquivo dos pais na pasta de outputs no modo escrita
