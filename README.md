@@ -4,16 +4,16 @@
 - Aplicar as técnicas de probabilidade em ordem computacional, possibilitando a imputação de dados genômicos.
 
 ## Sistema de pastas:
--dados
-    -Aqui ficarão todos os csv's dos animais
-    -Animais
-        -mais alguns csv's
+- dados
+    - Aqui ficarão todos os csv's dos animais
+    - Animais
+        - mais alguns csv's
 
--Python-app
-    -Data
-        -Application
-        -Input
+- Python-app
+    - Data
+        - Application
+        - Input
 
-    -IC-Genoma
-        -src
-            -Aqui ficarão os códigos
+    - IC-Genoma
+        - src
+            - Aqui ficarão os códigos
