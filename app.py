@@ -1,12 +1,15 @@
+# IMPORTS   
 from src.AnimaisCtrl import AnimaisCtrl
 from src.Genomas import Genomas
 
+#Classe de entrada
 class App:
+    # inicialização
     def __init__(self):
         self.animaisCtrl = AnimaisCtrl()
         self.genomas = Genomas()
         self.menu()
-
+    #menu
     def menu(self):
         opt = 1
         while opt != 0:
@@ -22,18 +25,18 @@ class App:
             
             if opt == 1:
                 self.extrairGenoma()
-
+    #
     def criarGenoma(self):
         genoma_type = input("\nDigite o tipo do Genoma, eg: 35k; 65k...\n Tipo:")
         genoma_folder = input("\nDigite o nome de diretório para esta base de Genoma:\n Diretório:")
-
+        #Retorna a função addGenoma que está no Genoma.py
         return self.genomas.addGenoma(genoma_type, genoma_folder)
 
     def extrairGenoma(self):
-
+        #genomaOptString é uma função que está no Genoma.py
         genomaOptString = "  0 => Não está nesta lista, criar novo\n"
         for genoma in self.genomas.lista_genomas:
-            genomaOptString += "  "+genoma.toOptionString()+"\n"
+            genomaOptString += "  "+ genoma.toOptionString()+"\n"
 
         genoma_filename = input("\nQual o endereço do arquivo do genoma? \n Endereço: ")
 
