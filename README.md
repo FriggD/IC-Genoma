@@ -32,6 +32,7 @@
     'avo_materno', 'tem_filhos', 'genoma_files'. 
         
 ### Genomas
-
+    Podem existir vários tipos de genoma, como de 65k marcadores, 90k marcadores, etc..., para isso foi criado uma tabela que terá controle em todos os tipos de genoma que passaram pelo sistema, essa tabela é referenciada pelo Animal, isso significa que aquele animal possui este tipo de arquivo de genoma
 
 ### Info_Animais
+    

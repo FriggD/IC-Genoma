@@ -1,5 +1,6 @@
 import pandas
 import csv
+import os
 
 from src.AnimaisCtrl import DATA_FOLDER
 
@@ -23,8 +24,22 @@ class Genomas:
             self.lista_genomas.append( Genoma(linha) )
             self.num_genomas += 1
 
+    def getFolderById(self, id):
+        print("Buscando ", id)
+        for genoma in self.lista_genomas:
+            if genoma.id == id:
+                return genoma.folder
+        
+        return False
+
     def addGenoma(self, type, folder):
         # TODO: Verificar se tipo de genoma ou o folder já existem
+
+        # Verificar se a pasta com o nome desejado já existe
+        caminho = DATA_FOLDER+"/Application/Genomas/"+folder 
+        # Se não existir, cria a pasta
+        if not os.path.exists(caminho):
+            os.makedirs(caminho)
 
         new_genoma = Genoma([self.num_genomas+1, type, folder])
 
@@ -43,7 +58,7 @@ class Genoma:
     def __init__(self, dataArr):
         self.id = dataArr[0]
         self.type = dataArr[1]
-        self.folder = dataArr[1]
+        self.folder = dataArr[2]
 
     def toOptionString(self):
         return "{} => {}".format(self.id, self.type)

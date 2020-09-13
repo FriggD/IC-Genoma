@@ -18,11 +18,12 @@ class Animal:
         self.id_pai         = dataArr[3]
         self.id_mae         = dataArr[4]
         self.avo_materno    = dataArr[5]
-        self.genoma_files   = str(dataArr[6]).split(sep=";")
+        self.tem_filhos     = dataArr[6]
+        self.genoma_files   = str(dataArr[7]).split(sep=";")
 
     def __str__(self):
         return 'Animal {}, sexo {}, nascido em {}, pai: {}, mãe: {}'.format(self.animal_id, self.sexo, self.nasc, self.id_pai, self.id_mae)
 
     def toArray(self):
-        return [";".join(self.animal_id), self.sexo, self.nasc, self.id_pai, self.id_mae, self.avo_materno, ";".join(self.genoma_files)]
+        return [";".join(self.animal_id), self.sexo, self.nasc, self.id_pai, self.id_mae, self.avo_materno, self.tem_filhos, ";".join(self.genoma_files)]
 
