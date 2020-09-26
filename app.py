@@ -1,6 +1,8 @@
 # IMPORTS   
-from src.AnimaisCtrl import AnimaisCtrl
-
+from src.AnimaisCtrl import AnimaisCtrl, DATA_FOLDER
+import pandas as pd
+import os
+import csv
 
 #Classe de entrada
 class App:
@@ -17,7 +19,10 @@ class App:
             print("### O que você quer fazer? ")
 
             print(" # ( 0 ): Sair do Programa")
-            print(" # ( 1 ): Extrair animais de um arquivo de Genoma")
+            print(" # ( 1 ): Extrair animais de uma pasta de arquivos Genoma")
+            print(" # ( 2 ): Converter .txt para .csv")
+            print(" # ( 3 ): Importar attributos de animais")
+            print(" # ( 4 ): Treinar Modelo Biotipo")
             # print(" # ( 0 ): Sair do Programa")
             # print(" # ( 0 ): Sair do Programa")
             
@@ -25,6 +30,13 @@ class App:
             
             if opt == 1:
                 self.extrairGenoma()
+            elif opt == 2:
+                App.convertTXT()
+            elif opt == 3:
+                self.animaisCtrl.readAttrFile("Biotipos.csv")
+            elif opt == 4:
+                self.animaisCtrl.rnaBiotipo()
+    
     #
     def criarGenoma(self):
         genoma_type = input("\nDigite o tipo do Genoma, eg: 35k; 65k...\n Tipo:")
@@ -38,17 +50,71 @@ class App:
         for genoma in self.animaisCtrl.genomas.lista_genomas:
             genomaOptString += "  "+ genoma.toOptionString()+"\n"
 
-        genoma_filename = input("\nQual o endereço do arquivo do genoma? \n Endereço: ")
+        folder = input("\nQual o endereço do arquivo do genoma? \n Endereço: ")
 
-        genoma_type = int(input("\nEste arquivo genoma é de qual tipo? \n"+genomaOptString+" Opção: "))
+        genomaFileHandlers = App.getFileHandlersFromFolder(folder)
+
+        genoma_type = int(input("\nOs arquivos genoma são de qual tipo? \n"+genomaOptString+" Opção: "))
         if genoma_type == 0:
             genoma_type = self.criarGenoma()
-        
-        checagem_headers = input("\nVerifique se as colunas da tabela estão configurada da seguinte forma:\n  ['SNP_Name','Chr','Position','Sample_ID', 'Allele1 - AB', 'Allele2 - AB']\n  Em formato csv separado por ,\n(y/n): ")
-            
-        if checagem_headers.lower().strip() == 'y':
-            print("Extraindo Genoma...")
-            self.animaisCtrl.extrairGenoma(genoma_filename, genoma_type)
+               
+        self.animaisCtrl.extrairGenoma(genomaFileHandlers, genoma_type)
+
+    @staticmethod
+    def convertTXT():
+        for file in os.listdir(DATA_FOLDER+'/raw/txt'):
+            if file.endswith(".txt"):
+                print("Convertendo arquivo: {}".format(file))
+
+                headerFound = False
+                header =  ['SNP_Name','Chr','Position','Sample_ID', 'Allele1 - AB', 'Allele2 - AB']             
+
+                csv_file = open(DATA_FOLDER+'/raw/csv/'+ file.split('.')[0]+".csv", "w")
+                csv_w = csv.writer(csv_file)
+                csv_w.writerow(header)
+
+                fp = open(DATA_FOLDER+'/raw/txt/'+ file, 'r')
+                for line_idx, line in enumerate(fp):
+                    splitted = line.split('\t');
+                    if headerFound:                       
+                        csv_w.writerow([splitted[headers_idx[0]], splitted[headers_idx[1]], splitted[headers_idx[2]], splitted[headers_idx[3]], splitted[headers_idx[4]], splitted[headers_idx[5]]])
+                    else:
+                        try:
+                            if (splitted[0] == 'SNP Name' and splitted[1] == 'Chr' and splitted[2] == 'Position' and splitted[3] == 'Sample ID' and splitted[8] == 'Allele1 - AB', splitted[9] ==  'Allele2 - AB'):
+                                headers_idx = [0,1,2,3,8,9]
+                                headerFound = True
+                        except:
+                            continue     
+
+                    # if line_idx == 10:
+                    #     break
+
+                if not(headerFound):
+                    print("Header não encontrado para arquivo: {}".format(file))
+                csv_file.close()
+
+    @staticmethod
+    def getFileHandlersFromFolder(folder):
+        fileHandler = []
+
+        for file in os.listdir(DATA_FOLDER+'/raw/'+folder):
+            if file.endswith(".csv"):   
+                file_DataFrame = pd.read_csv(DATA_FOLDER+'/raw/'+folder+'/'+file, nrows=5)     
+                # GGP_Indicus_35K
+                columns = file_DataFrame.columns.values
+                
+                try:
+                    if ( list(columns) == ['SNP_Name', 'Chr', 'Position', 'Sample_ID', 'Allele1 - AB', 'Allele2 - AB']):
+                        fileHandler.append([DATA_FOLDER+'/raw/'+folder+'/'+file, False])
+                    elif columns[0] == 'SNP Name' and columns[1] == 'Chr' and columns[2] == 'Position' and columns[3] == 'Sample ID' and columns[8] == 'Allele1 - AB' and columns[9] ==  'Allele2 - AB':
+                        fileHandler.append([DATA_FOLDER+'/raw/'+folder+'/'+file, [0,1,2,3,8,9]])
+                except:
+                    pass
+
+        return fileHandler
+
+                
+
 
 if __name__ == "__main__":
     app = App()
