@@ -14,14 +14,7 @@ import csv
 from time import sleep
 from copy import deepcopy
 import random
-from sklearn.model_selection import train_test_split
-import seaborn as sns
-import matplotlib.pyplot as plt
-import sklearn
 
-from keras import optimizers
-from keras.models import Sequential, load_model
-from keras.layers import Dense
 
 
 DATA_FOLDER = '../Dados'
@@ -115,7 +108,6 @@ class AnimaisCtrl:
         with open(DATA_FOLDER+'/Application/Animais.csv', 'w') as f:
             self.animais_DF.to_csv(f, header=0)
 
-
     def readAttrFile(self, attr_file):
         file_DataFrame = pd.read_csv(DATA_FOLDER+'/raw/attrs/'+attr_file)
 
@@ -171,10 +163,6 @@ class AnimaisCtrl:
                         continue
                 
                 self.atualizarAnimalCsv(animal, temp_animal_id)
-
-
-
-
 
         print(attr_file)
             
@@ -275,10 +263,10 @@ class AnimaisCtrl:
                     f_animal_file.close()
             except:
                 pass            
-
-    def rnaBiotipo(self):
-        Animais = []
-        Biotipos = []
+  
+    def make_dataset(self):
+        AnimaisArr = []
+        FeaturesArr = []
 
         for animal in self.lista_animais:
             # biotipo_animal_text = float(animal.get_attr_value('PESO_NASC'))
@@ -287,265 +275,31 @@ class AnimaisCtrl:
             if str(biotipo_animal_text) in [-1, "-1", "NAN", None]:
                 continue
            
-            # cria um vetor de animal ,Biotipo
-            Animais.append([animal.animal_id[0]])
-            # Biotipos.append(biotipo_animal_text)
-            Biotipos.append(AnimaisCtrl.getBiotipoVal(biotipo_animal_text))
+            # cria um vetor de animal, biotipo
+            AnimaisArr.append([animal.animal_id[0]])
+            FeaturesArr.append(biotipo_animal_text)
 
-        Animais_train, Animais_test, Biotipos_train, Biotipos_test = train_test_split(Animais, sklearn.preprocessing.minmax_scale(Biotipos), test_size=0.3, random_state=22)
-       
-        proceder = 0
-        while not(proceder in [1,2]):
-            proceder = int(input("Como deseja proceder:\n   1: Carregar Modelo\n   2: Iniciar novo Modelo\n -> "))
+        dataset_name = input("Nomeie o novo dataset:\n-> ")
+        dataset_file_open = open(DATA_FOLDER + "/Application/Datasets/"+dataset_name +'.csv', "w")
+        dataset_file = csv.writer(dataset_file_open)
 
-        name = ''
-        if proceder == 1:
-            name = input("Qual o nome do modelo? \n -> ")
-            
-            classifier = load_model(DATA_FOLDER+"/Application/Models/"+name)
-        else:
-            name = input("Digite um nome para este modelo\n -> ")
-
-            classifier = Sequential()
-
-            classifier.add(Dense(units=1024, activation = 'relu', input_dim=35338))
-            classifier.add(Dense(units=128, activation = 'relu'))
-            classifier.add(Dense(units=16, activation = 'relu'))
-            classifier.add(Dense(units=16, activation = 'relu'))
-            classifier.add(Dense(units=1, activation = 'sigmoid'))
-
-            optimizer = optimizers.Adam(lr=0.001)
-            classifier.compile(optimizer = optimizer, loss='binary_crossentropy')
-
-        oquefazer = 0
-        while oquefazer in [0,1,2,3,4,5]:
-            oquefazer = int(input("O que deseja fazer? \n  1- Testar o Modelo\n  2- Treinar\n  3- Visualizar Dados de Teste\n  4- Visualizar dados de Treinamento  \n  5- Salvar e Sair\n -> "))
-
-            if oquefazer == 1:
-                mean_error, predOK = self.testModelKeras(Animais_test, Biotipos_test, classifier)
-                print("\n### Erro médio: {:.8f} # {}/{} acertos ({:.2f}% acc)  \n".format(mean_error, predOK, len(Animais_test), (predOK/len(Animais_test))*100), end="", flush=True)
-            
-            elif oquefazer == 2:
-                for generation in range(5):
-                    mean_error, predOK = self.testModelKeras(Animais_test, Biotipos_test, classifier)
-                    print("\n### Geração {} # Erro médio: {:.8f} # {}/{} acertos ({:.2f}% acc)  \n".format(generation, mean_error, predOK, len(Animais_test), (predOK/len(Animais_test))*100), end="", flush=True)
-
-                    classifier.save(DATA_FOLDER+"/Application/Models/"+name)
-
-                    for batch in range(5):
-                        train_batch_X, train_batch_y = self.getTrainBatchData(Animais, Biotipos)
-                        classifier.fit(train_batch_X, train_batch_y, batch_size=15, epochs=1)
-                    
-            elif oquefazer == 3:
-                sns.countplot(Biotipos_test)
-                plt.show()
-            elif oquefazer == 4:
-                sns.countplot(Biotipos_train)
-                plt.show()
-            elif oquefazer == 5:
-                break
-            else:
-                continue
-
-        classifier.save(DATA_FOLDER+"/Application/Models/"+name)
-
-        # np.random.seed(1)
-
-        # syn0 = 2*np.random.random((35338, 100)) -1
-        # syn1 = 2*np.random.random((100, 1)) -1
-        # syn2 = 2*np.random.random((20, 5)) -1
-        # syn3 = 2*np.random.random((5, 5)) -1
-        # syn4 = 2*np.random.random((5, 1)) -1
-
-        # for generation in range(1000):            
-
-        #     # ############## Teste ##############
-        #     mean_error, predOK = self.testModel(Animais_test, Biotipos_test, [syn0, syn1])         
-        #     print("\n### Geração {} # Erro médio: {:.8f} # {}/{} acertos ({:.2f}% acc) # LR {:.4f} # ".format(generation, mean_error, predOK, len(Animais_test), (predOK/len(Animais_test))*100, learningRate), end="", flush=True)
-
-        #     # ############## Treinamento ##############
-        #     print("Batch: ",end="", flush=True)
-        #     for train_batch in range(10):
-        #         print("[{}".format(train_batch), end="")
-
-        #         train_batch_X, train_batch_y = self.getTrainBatchData(Animais, Biotipos)
-        #         # print("Shape[0]: \n{}".format(train_batch_X[0].shape))
-
-        #         l0 = train_batch_X
-        #         l1 = AnimaisCtrl.sigmoid(np.dot(l0, syn0))
-        #         l2 = AnimaisCtrl.sigmoid(np.dot(l1, syn1))
-        #         # l3 = AnimaisCtrl.sigmoid(np.dot(l2, syn2))
-        #         # l4 = AnimaisCtrl.sigmoid(np.dot(l3, syn3))
-        #         # l5 = AnimaisCtrl.sigmoid(np.dot(l4, syn4))
-
-        #         print(".", end="", flush=True)
-
-        #         # l5_error = train_batch_y - l5
-        #         # # print("Erro: {}".format(l5_error))
-
-        #         # l5_delta = l5_error * AnimaisCtrl.sigmoid(l5, deriv=True)
-
-        #         # l4_error = l5_delta.dot(syn4.T)
-        #         # l4_delta = l4_error * AnimaisCtrl.sigmoid(l4, deriv=True)
-
-        #         # l3_error = l4_delta.dot(syn3.T)
-        #         # l3_delta = l3_error * AnimaisCtrl.sigmoid(l3, deriv=True)
-
-        #         l2_error = train_batch_y -l2
-
-        #         # l2_error = l3_delta.dot(syn2.T)
-        #         l2_delta = l2_error * AnimaisCtrl.sigmoid(l2, deriv=True)
-
-        #         l1_error = l2_delta.dot(syn1.T)
-        #         l1_delta = l1_error * AnimaisCtrl.sigmoid(l1, deriv=True)
-
-        #         print(".", end="", flush=True)
-
-        #         # Atualizando pesos sinápticos   
-        #         # syn4 += (l4.T.dot(l5_delta)) * learningRate
-        #         # syn3 += (l3.T.dot(l4_delta)) * learningRate
-        #         # syn2 += (l2.T.dot(l3_delta)) * learningRate
-        #         syn1 += (l1.T.dot(l2_delta))
-        #         syn0 += (l0.T.dot(l1_delta)) 
-
-        #         # print("{:.5f}] ".format(np.mean(np.absolute(l5_error.flatten()))), end="", flush=True)
-                
-        #     learningRate = learningRate* (0.95)
-
-        # print("Treinamento: {}\n Teste: {}\n".format(len(Animais_train), len(Animais_test)))
-
-    def testModelKeras(self, animaisArr, BiotiposArr, classifier):
-        batchSize = 60
-        animalCount = 0
-        batch = 0
-
-        err = np.array([])
-        predOK = []
-        while (animalCount < len(animaisArr)):
-            testeDataX = []
-            testeDatay = []
-            animais = []
-            for i in range(batchSize):
-                animalCount += 1
-                current_animal = i + (batch*batchSize)
-                animais.append([animaisArr[current_animal], BiotiposArr[current_animal]])
-
-                if animalCount >= len(animaisArr):
-                    break
-
-            for animal in animais:
-                animal_genotipo = []
-                testeDatay.append([animal[1]])
-
-                mapa_genotipo = pd.read_csv(DATA_FOLDER+'/Application/Genomas/GGP_Indicus_35K/'+str(animal[0][0])+".csv", usecols=[4,5])
-                for line in mapa_genotipo.values:
-                    if (line[0] == "A" and line[1] == "B") or (line[0] == "B" and line[1] == "A"):
-                        animal_genotipo.append(1)
-                    elif line[0] == "A" and line[1] == "A":
-                        animal_genotipo.append(2)
-                    elif line[0] == "B" and line[1] == "B":
-                        animal_genotipo.append(3)
-                    else:
-                        animal_genotipo.append(5)
-
-                testeDataX.append(np.array(animal_genotipo))
-
-            testeDataX = np.array(testeDataX)
-            testeDatay = np.array(testeDatay)
-
-            pred_y = classifier.predict(testeDataX)
-
-            errors = (testeDatay - np.array(pred_y).flatten())     
-           
-            err = np.concatenate((err, np.absolute(errors).flatten()), axis=0)
-
-            for pred_idx, pred in enumerate(pred_y):
-                predOK.append(int(AnimaisCtrl.biotipoClassifOK(testeDatay[pred_idx], pred)))
-
-        return [np.mean(err), np.sum(np.array(predOK))]
-   
-    def getTrainBatchData(self, animaisArr, BiotiposArr):
-        BATCH_SIZE = 120
-
-        animais = []
-        biotipoCount = {str(1/12): 0, str(3/12):0, str(5/12): 0, str(7/12): 0, str(9/12): 0, str(11/12): 0}
- 
-        while (len(animais) < BATCH_SIZE):
-            randomAnimal = np.random.randint(0, len(animaisArr)-1)
-            if randomAnimal in animais:
-                continue
-
-            # animais.append([animaisArr[randomAnimal], BiotiposArr[randomAnimal]])
-            # print(randomAnimal)
-            if (biotipoCount[str(BiotiposArr[randomAnimal])] < (BATCH_SIZE/6)):
-                animais.append([animaisArr[randomAnimal], BiotiposArr[randomAnimal]])
-                biotipoCount[ str(BiotiposArr[randomAnimal]) ] += 1
-
-        BatchDataX = []
-        BatchDatay = []
-        for animal in animais:
+        for animal_idx, animal in enumerate(AnimaisArr):
             # print("Animal{}".format(animal))
-            animal_genotipo = []
-
-            BatchDatay.append([animal[1]])
-
-            mapa_genotipo = pd.read_csv(DATA_FOLDER+'/Application/Genomas/GGP_Indicus_35K/'+str(animal[0][0])+".csv", usecols=[4,5])
-            for line in mapa_genotipo.values:
-                animal_genotipo.append(AnimaisCtrl.getGenotipoVal(line[0], line[1]))               
+            genotiposArr = [FeaturesArr[animal_idx]]
+            genotipo_file = pd.read_csv(DATA_FOLDER+'/Application/Genomas/GGP_Indicus_35K/'+str(animal[0])+".csv", usecols=[4,5])
+            for line in genotipo_file.values:
+                genotiposArr.append(AnimaisCtrl.getGenotipoVal(line[0], line[1]))               
                
-                    
-            BatchDataX.append(np.array(animal_genotipo))
-
-        return np.array(BatchDataX), np.array(BatchDatay)
-
-    # @staticmethod
-    # def sigmoid(x, deriv=False):
-    #     if deriv == True:
-    #         return x*(1-x)
-
-    #     return 1/(1+ np.exp(-x))
+            # Escreve no arquivo 
+            dataset_file.writerow(genotiposArr)
 
     @staticmethod
     def getGenotipoVal(genAB_1, genAB_2):
         if (genAB_1 == "A" and genAB_2 == "B") or (genAB_1 == "B" and genAB_2 == "A"):
-            return 0.5
+            return 1
         elif genAB_1 == "A" and genAB_2 == "A":
-            return 0.3
-        elif genAB_1 == "B" and genAB_2 == "B":
-            return 0.7
-        else:
             return 0
-
-    @staticmethod
-    def biotipoClassifOK(biotipo_real, biotipo_pred):
-        # margem = 0.01
-        margem = 1/12
-
-        classifOK = (abs(biotipo_real - biotipo_pred) <= margem)
-       
-        return classifOK
-            
-    @staticmethod
-    def getBiotipoVal(biotipo):
-        biotipo =  str(biotipo).upper().strip()
-        if biotipo == "DESCARTE":
-            return 1/12
-
-        elif biotipo == "INFERIOR":
-            return 3/12
-
-        elif biotipo == "STANDARD":
-            return 5/12
-
-        elif biotipo == "TOP BEEF":
-            return 7/12
-
-        elif biotipo == "TOP FAT":
-            return 9/12
-
-        elif biotipo == "PRIME":
-            return 11/12
-
+        elif genAB_1 == "B" and genAB_2 == "B":
+            return 2
         else:
-            print("Erro de biotipo: {}".format(biotipo))
-
+            return 5

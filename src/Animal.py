@@ -8,6 +8,8 @@ PATH_50K = 6
 PATH_75K = 7
 PATH_90K = 8
 
+import math
+
 class Animal:
     cur_AutoIncrement = 0
 
@@ -58,6 +60,17 @@ class Animal:
         if str(value).strip() == "":
             return
 
+        if str(value).strip == 'nan' or value != value:
+            print("Tem valor nan")
+            return
+        
+        try:
+            if math.isnan(value):
+                print("Tem valor nan2")
+                return
+        except:
+            pass
+
         if not(self.has_attr(attr)):
             self.attr.append(str(attr)+ ":"+str(value))
         else:
@@ -67,6 +80,17 @@ class Animal:
         attr = str(attr).upper().replace(' ', '_')
         if str(value).strip() == "":
             return
+            
+        if str(value).strip == 'nan' or value != value:
+            print("Tem valor nan")
+            return
+        
+        try:
+            if math.isnan(value):
+                print("Tem valor nan2")
+                return
+        except:
+            pass
 
         for idx, aux_attr in enumerate(self.attr):
             try:

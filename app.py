@@ -33,9 +33,10 @@ class App:
             elif opt == 2:
                 App.convertTXT()
             elif opt == 3:
-                self.animaisCtrl.readAttrFile("Biotipos.csv")
+                attr_File = input("Digite o nome do arquivo de atributos:\n-> ")
+                self.animaisCtrl.readAttrFile(attr_File)
             elif opt == 4:
-                self.animaisCtrl.rnaBiotipo()
+                self.animaisCtrl.make_dataset()
     
     #
     def criarGenoma(self):
