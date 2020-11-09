@@ -20,11 +20,9 @@ class App:
 
             print(" # ( 0 ): Sair do Programa")
             print(" # ( 1 ): Extrair animais de uma pasta de arquivos Genoma")
-            print(" # ( 2 ): Converter .txt para .csv")
+            print(" # ( 2 ): Converter .txt para .csv (pasta inteira)")
             print(" # ( 3 ): Importar attributos de animais")
-            print(" # ( 4 ): Treinar Modelo Biotipo")
-            # print(" # ( 0 ): Sair do Programa")
-            # print(" # ( 0 ): Sair do Programa")
+            print(" # ( 4 ): Gerar dataset Biotipo")
             
             opt = int(input("Digite sua Opção: "))
             
@@ -38,28 +36,13 @@ class App:
             elif opt == 4:
                 self.animaisCtrl.make_dataset()
     
-    #
-    def criarGenoma(self):
-        genoma_type = input("\nDigite o tipo do Genoma, eg: 35k; 65k...\n Tipo:")
-        genoma_folder = input("\nDigite o nome de diretório para esta base de Genoma:\n Diretório:")
-        #Retorna a função addGenoma que está no Genoma.py
-        return self.animaisCtrl.genomas.addGenoma(genoma_type, genoma_folder)
 
     def extrairGenoma(self):
-        #genomaOptString é uma função que está no Genoma.py
-        genomaOptString = "  0 => Não está nesta lista, criar novo\n"
-        for genoma in self.animaisCtrl.genomas.lista_genomas:
-            genomaOptString += "  "+ genoma.toOptionString()+"\n"
-
         folder = input("\nQual o endereço do arquivo do genoma? \n Endereço: ")
 
         genomaFileHandlers = App.getFileHandlersFromFolder(folder)
-
-        genoma_type = int(input("\nOs arquivos genoma são de qual tipo? \n"+genomaOptString+" Opção: "))
-        if genoma_type == 0:
-            genoma_type = self.criarGenoma()
                
-        self.animaisCtrl.extrairGenoma(genomaFileHandlers, genoma_type)
+        self.animaisCtrl.extrairGenoma(genomaFileHandlers)
 
     @staticmethod
     def convertTXT():

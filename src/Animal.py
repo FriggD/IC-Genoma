@@ -21,9 +21,8 @@ class Animal:
         self.id_mae         = dataArr[4]
         self.avo_materno    = dataArr[5]
         self.tem_filhos     = dataArr[6]
-        self.genoma_files   = str(dataArr[7]).split(sep=";")
         try:
-            self.attr       = str(dataArr[8]).split(sep=";")
+            self.attr       = str(dataArr[7]).split(sep=";")
         except:
             self.attr = ""
     
@@ -105,5 +104,5 @@ class Animal:
         return 'Animal {}, sexo {}, nascido em {}, pai: {}, mãe: {}'.format(self.animal_id, self.sexo, self.nasc, self.id_pai, self.id_mae)
 
     def toArray(self):
-        return [";".join(self.animal_id), self.sexo, self.nasc, self.id_pai, self.id_mae, self.avo_materno, self.tem_filhos, ";".join(self.genoma_files), ";".join(self.attr)]
+        return [";".join(self.animal_id), self.sexo, self.nasc, self.id_pai, self.id_mae, self.avo_materno, self.tem_filhos, ";".join(self.attr)]
 
