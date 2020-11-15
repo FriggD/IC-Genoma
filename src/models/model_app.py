@@ -12,6 +12,8 @@ class Animal(Base):
     sexo = Column('sexo', String(1))
     data_nasc = Column('data_nasc', Date)
     
+    def __repr__(self):
+        return "<Animal (id={}, id_Pai={}, id_Mae={}, sexo={}, data_nasc={})>".format(self.id, self.id_Pai, self.id_Mae, self.sexo, self.data_nasc)
     # username = Column('username', String(50), unique=True)
 
 class Animal_nome(Base):
@@ -22,14 +24,14 @@ class Animal_nome(Base):
     animal_id = Column(Integer, ForeignKey('animal.id'))
 
 class Atributo(Base):
-    __tablename__="atributo"
-    id = Column('id', Integer, primary_key=True)
+    __tablename__= "atributo"
+    id = Column('id', String(80), primary_key=True)
 
 class Animal_atributo(Base):
     __tablename__="animal_atributo"
     id = Column('id', Integer, primary_key=True)
     animal_id = Column(Integer, ForeignKey('animal.id'))
-    atributo_id = Column(Integer, ForeignKey('atributo.id'))
+    atributo_id = Column(String(80), ForeignKey('atributo.id'))
     valor = Column('valor', String(50))
 
 class Mapa(Base):
@@ -63,10 +65,10 @@ class Mapa_marcador(Base):
     mapa_id = Column(Integer, ForeignKey('mapa.id'))
 
 engine = create_engine('mysql+pymysql://root:secret@192.168.0.13/genoma', echo=True)
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
 Session = sessionmaker(bind=engine)
 
-# session = Session()
+session = Session()
 # animais = session.query(Animal).all()
 # for animal in animais:
 #     print(animal)
