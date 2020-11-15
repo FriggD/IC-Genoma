@@ -1,6 +1,6 @@
 from model_app import Animal, session
 
-class Animal_Session:
+class Animal_DB:
     def __init__(self, session):
         self.session = session
 
@@ -29,7 +29,7 @@ class Animal_Session:
 # Comentar após testar
 
 # Teste de criação de um Animal
-animal_session = Animal_Session(session)
+animal_session = Animal_Db(session)
 retorno = animal_session.create(Animal(sexo="M", data_nasc="2020-11-11"))
 print("Retorno:", retorno)
 
