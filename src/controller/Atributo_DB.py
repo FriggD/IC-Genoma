@@ -1,6 +1,9 @@
 from ../models/model_app import Atributo, session
 # Create, create_all, getAll
 
+class Atributo_DB:
+    def __init__(self, session):
+        self.session = session
  # Recebe uma instância de animal como parâmetro, e cria o registro dele no banco
     def create(self, atributo):
         try: 
