@@ -38,3 +38,32 @@ class Animal_atributo_DB:
         except:
             print("Erro ao tentar buscar todos os Animais_atributos")
             return False
+    
+    def delete(self, animal_atributo_id):
+        try: 
+            # Recupera o animal do banco pelo id
+            animal_atributo = self.session.query(Animal_atributo).filter_by(id=animal_atributo_id).one()
+            
+            # Deleta o animal
+            self.session.delete(animal_atributo)
+
+            # Commita no banco as mudanças
+            self.session.commit()
+        except:
+            print("Erro ao fazer o delete (animal_atributo)!")
+            return False
+
+    # Atualiza um animal utilizando o id do mesmo
+    def update(self, animal_atributo):
+        # try:
+        # Recupera o animal do banco de dados
+        animal_atributo_bd = self.session.query(animal_atributo).filter_by(id=animal_atributo.id)
+
+        # Atualiza os campos do animal
+        animal_atributo_bd.animal_id = animal_atributo.animal_id
+        animal_atributo_bd.atributo_id = animal_atributo.atributo_id
+        animal_atributo_bd.sexo = animal_atributo.sexo
+        animal_atributo_bd.valor = animal_atributo.valor
+
+        # Atualiza no banco as informações
+        self.session.commit()
