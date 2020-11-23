@@ -35,6 +35,8 @@ class App:
                 self.animaisCtrl.readAttrFile(attr_File)
             elif opt == 4:
                 self.animaisCtrl.make_dataset()
+            elif opt ==5:
+                
     
 
     def extrairGenoma(self):
