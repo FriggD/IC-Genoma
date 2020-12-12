@@ -50,9 +50,11 @@ class Marcador_DB:
     def delete(self, marcador_snp):
         try: 
             # Recupera o marcador do banco pelo snp
-            marcador = self.session.query(Marcador_Schema).filter_by(snp=marcador_snp).one(
+            marcador = self.session.query(Marcador_Schema).filter_by(snp=marcador_snp).one()
+            
             # Deleta o marcador
             self.session.delete(marcador)
+
             # Commita no banco as mudanças
             self.session.commit()
             

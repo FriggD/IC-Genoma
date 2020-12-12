@@ -2,6 +2,8 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Date,
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
+from src.configuration.config import DB_IP, DB_NAME, DB_USER, DB_PASSWD
+
 Base = declarative_base()
 
 class Animal_Schema(Base): # getAll, getByName
@@ -85,8 +87,8 @@ class Mapa_marcador_Schema(Base): # CCG
     def __repr__(self):
         return "<Mapa (id={}, snp_id={}, mapa_id={})>".format(self.id, self.snp_id, self.mapa_id)
 
-engine = create_engine('mysql+pymysql://root:secret@192.168.0.13/genoma', echo=True)
-Base.metadata.create_all(bind=engine) # Descomentar se precisar recriar a estrutura
+engine = create_engine('mysql+pymysql://'+DB_USER+':'+DB_PASSWD+'@'+DB_IP+'/'+DB_NAME, echo=True)
+# Base.metadata.create_all(bind=engine) # Descomentar se precisar recriar a estrutura
 Session = sessionmaker(bind=engine)
 
 session = Session()
