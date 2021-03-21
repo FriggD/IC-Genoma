@@ -33,6 +33,7 @@ class App:
             if opt == 1:
                 print("Aqui você estaria extraindo Genoma!")
                 extGenController()
+                
                 # self.extrairGenoma()
             # elif opt == 2:
             #     App.convertTXT()

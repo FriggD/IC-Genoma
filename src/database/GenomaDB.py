@@ -16,9 +16,9 @@ class Animal(BaseModel):
     __tablename__= "animal"
     __repr_attrs__ = ['sexo', 'data_nasc']
 
-    id = Column('id', String, primary_key=True)
-    id_Pai = Column('id_pai', String)
-    id_Mae = Column('id_mae', String)
+    id = Column('id', String(128), primary_key=True)
+    id_Pai = Column('id_pai', String(128))
+    id_Mae = Column('id_mae', String(128))
     sexo = Column('sexo', String(1))
     data_nasc = Column('data_nasc', Date)
 
@@ -27,11 +27,9 @@ class Mapa(BaseModel):
     __tablename__="mapa"
     __repr_attrs__ = ['nome', 'hash', 'snp_count']
 
-    id = Column('id', Integer, primary_key=True)
-    nome = Column('nome',String(50), unique=True)
-    hash = Column('hash', String(50), unique=True)
+    id = Column('id', String(50), primary_key=True)
+    nome = Column('nome', String(128))
     snp_count = Column('snp_count', Integer)
-    gerado_automaticamente = Column('gerado_automaticamente', Boolean())
 
 
 class AnimalMapa(BaseModel):
@@ -39,8 +37,8 @@ class AnimalMapa(BaseModel):
     __repr_attrs__ = ['animal_id', 'mapa_id']
 
     id = Column('id', Integer, primary_key=True)
-    animal_id = Column(Integer, ForeignKey('animal.id'))
-    mapa_id = Column(Integer, ForeignKey('mapa.id'))
+    animal_id = Column(String(128), ForeignKey('animal.id'))
+    mapa_id = Column(String(50), ForeignKey('mapa.id'))
 
 
 class Marcador(BaseModel):
@@ -49,17 +47,18 @@ class Marcador(BaseModel):
 
     snp = Column('snp', String(50), primary_key=True)
 
- 
+
 class Mapa_marcador(BaseModel):
     __tablename__ = "mapa_marcador"
-    __repr_attrs__ = ['snp_id', 'mapa_id', 'chromossome', 'position']
-
+    __repr_attrs__ = ['snp_id', 'mapa_id', 'chromossome', 'position']  
 
     id = Column('id', Integer, primary_key=True)
-    snp_id = Column(String(50), ForeignKey('marcador.snp'))
-    mapa_id = Column(Integer, ForeignKey('mapa.id'))
-    chromossome = Column(Integer, ForeignKey('mapa.id'))
-    position = Column(Integer, ForeignKey('mapa.id'))
+    snp = Column(String(50), ForeignKey('marcador.snp'))
+    mapa_id = Column(String(50), ForeignKey('mapa.id'))
+
+    chromossome = Column('chromossome',Integer)
+    position = Column('position', Integer)
+    
 
 
 engine = create_engine('mysql+pymysql://'+DB_USER+':'+DB_PASSWD+'@'+DB_IP+'/'+DB_NAME, echo=True)
