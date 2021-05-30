@@ -148,11 +148,26 @@ class extrairGenomaController:
         except Exception as e:
             logger.error("Um erro inesperado ocorreu", exc_info=True)
 
+        # TODO
+        self.updateAnimalGenomaFile(animal_dict)
+
         session.commit()
 
         # endregion
 
     # endregion
+
+    def updateAnimalGenomaFile(self, animal_dict):
+        """
+            ? Atualiza os novos marcadores ao arquivo de genoma do animal
+            Se o animal já possuir um arquivo de genoma, faz um merge do genoma atual com o que está vindo
+            se não possuir, só cria o arquivo com o genoma novo
+            @param animal_dict['nome']
+            @param animal_dict['genotypes']
+            @param animal_dict['sample']
+        """
+        # TODO: fazer
+        pass
 
     # region CreateMapHash
     def CreateMapHash(self, genotypes):
