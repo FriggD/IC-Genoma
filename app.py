@@ -2,6 +2,7 @@
 import pandas as pd
 import os
 import csv
+import src.database.GenomaDB
 
 from src.controllers.extrairGenoma import extrairGenomaController as extGenController
 
@@ -12,7 +13,6 @@ class App:
         # Verificações de inicialização
         # Verifica se a estrutura de pastas dos dados existe
         # Verifica se os arquivos necessários estão criados
-
         self.menu()
 
     #menu

@@ -3,7 +3,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_mixins import AllFeaturesMixin
 
-from src.configuration.config import DB_IP, DB_NAME, DB_USER, DB_PASSWD
+from src.configuration.config import DB_PATH
 
 Base = declarative_base()
 
@@ -13,7 +13,7 @@ class BaseModel(Base, AllFeaturesMixin):
 
 
 class Animal(BaseModel):
-    __tablename__= "animal"
+    __tablename__= "Animal"
     __repr_attrs__ = ['sexo', 'data_nasc']
 
     id = Column('id', String(128), primary_key=True)
@@ -24,44 +24,44 @@ class Animal(BaseModel):
 
 
 class Mapa(BaseModel):
-    __tablename__="mapa"
-    __repr_attrs__ = ['nome', 'hash', 'snp_count']
+    __tablename__="Mapa"
+    __repr_attrs__ = ['nome', 'snp_count']
 
-    id = Column('id', String(50), primary_key=True)
+    id = Column('id', String(128), primary_key=True)
     nome = Column('nome', String(128))
     snp_count = Column('snp_count', Integer)
 
 
-class AnimalMapa(BaseModel):
+class Animal_mapa(BaseModel):
     __tablename__="Animal_mapa"
     __repr_attrs__ = ['animal_id', 'mapa_id']
 
     id = Column('id', Integer, primary_key=True)
-    animal_id = Column(String(128), ForeignKey('animal.id'))
-    mapa_id = Column(String(50), ForeignKey('mapa.id'))
+    animal_id = Column(String(128), ForeignKey('Animal.id'))
+    mapa_id = Column(String(50), ForeignKey('Mapa.id'))
 
 
 class Marcador(BaseModel):
-    __tablename__ = "marcador"
-    __repr_attrs__ = ['snp', 'mapa_id']
+    __tablename__ = "Marcador"
+    __repr_attrs__ = ['snp']
 
     snp = Column('snp', String(50), primary_key=True)
 
 
 class Mapa_marcador(BaseModel):
-    __tablename__ = "mapa_marcador"
-    __repr_attrs__ = ['snp_id', 'mapa_id', 'chromossome', 'position']  
+    __tablename__ = "Mapa_marcador"
+    __repr_attrs__ = ['snp', 'mapa_id', 'chromossome', 'position']  
 
     id = Column('id', Integer, primary_key=True)
-    snp = Column(String(50), ForeignKey('marcador.snp'))
-    mapa_id = Column(String(50), ForeignKey('mapa.id'))
+    snp = Column(String(50), ForeignKey('Marcador.snp'))
+    mapa_id = Column(String(50), ForeignKey('Mapa.id'))
 
     chromossome = Column('chromossome',Integer)
     position = Column('position', Integer)
     
 
 
-engine = create_engine('mysql+pymysql://'+DB_USER+':'+DB_PASSWD+'@'+DB_IP+'/'+DB_NAME, echo=True)
+engine = create_engine(f'sqlite:///{DB_PATH}', echo=False)
 session = scoped_session(sessionmaker(bind=engine))
 BaseModel.set_session(session)
 

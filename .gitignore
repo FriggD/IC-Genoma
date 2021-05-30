@@ -1,5 +1,7 @@
 Data/
 
+
+
 /Computed/
 !/Computed/.gitkeep
 /Dados
@@ -133,3 +135,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+Genoma.db
