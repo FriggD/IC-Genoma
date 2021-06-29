@@ -28,10 +28,13 @@ class App:
             # print(" # ( 3 ): Importar attributos de animais")
             # print(" # ( 4 ): Gerar dataset Biotipo")
             
-            opt = int(input("Digite sua Opção: "))
+            try:
+                opt = int(input("Digite sua Opção: "))
+            except:
+                continue
             
             if opt == 1:
-                print("Aqui você estaria extraindo Genoma!")
+                print("Aqui você está extraindo Genoma!")
                 extGenController()
                 
                 # self.extrairGenoma()

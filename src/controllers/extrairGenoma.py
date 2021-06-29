@@ -39,6 +39,7 @@ class extrairGenomaController:
 
             # Para cada arquivo a ser analisado, faça
             for fileHandler in self.fileHandlers:
+                logger.info(f"(extrairGenoma, __init__) Extraindo dados do arquivo {fileHandler}")
                 results = self.extrairGenoma(fileHandler)
         except:
             logger.error("Erros!", exc_info=True)
@@ -67,7 +68,6 @@ class extrairGenomaController:
                 * Verificação 2: getAndTrimHeader
         """
         # Para cada arquivo dentro da pasta indicada
-        logger.debug(os.getcwd())
         for file in os.listdir(self.genoma_folder):
             # Se o arquivo for do tipo txt, faça
             if file.endswith("txt"):    
@@ -76,14 +76,12 @@ class extrairGenomaController:
                 handler = self.getAndTrimHeader(file_path)
                 if handler:
                     self.fileHandlers.append(handler)
-                    return True
-                else:
-                    return False
     # endregion
 
     # region remove as informações acima do header e retorna o ponteiro para o arquivo junto com o header
     def getAndTrimHeader(self, file_path):
         # Cria o ponteiro para o arquivo
+        logger.debug(f"Trimmando {file_path}")
         num_lines = sum(1 for line in open(file_path,'r'))
 
         fp = open(file_path, 'r')
@@ -128,7 +126,11 @@ class extrairGenomaController:
 
                     try:
                         # ! Cadastrar os marcadores
-                        Marcador.create(snp=marcador['SNP Name'])
+                        if(Marcador.find(marcador['SNP Name']) == None):
+                            Marcador.create(snp=marcador['SNP Name'])
+                            logger.debug(f"Criando marcador {marcador['SNP Name']}")
+                        else:
+                            logger.debug(f"Marcador {marcador['SNP Name']} existente")
 
                         # ! Cadastrar Mapa_Marcador para cada marcador 
                         Mapa_marcador.create(snp=marcador['SNP Name'], mapa_id=mapa.id, chromossome=marcador['Chr'], position=marcador['Position'])
@@ -166,41 +168,17 @@ class extrairGenomaController:
             @param animal_dict['genotypes']
             @param animal_dict['sample']
         """
-        # TODO: fazer
-        pass
+        genotypesDF = self.sortAndFilterGenotypes(animal_dict['genotypes'])
+
+        logger.debug(f"(extrairGenoma, updateAnimalGenomaFile) Criando arquivo genoma para o animal {animal_dict['nome']}")
+
+        genotypesDF.to_pickle(self.getAnimalGenomaFilePath(animal_dict['nome']), compression='zip')
 
     # region CreateMapHash
     def CreateMapHash(self, genotypes):
         MapString = ""
-        # region criação de dataframe e separação de x e y 
-        DFgenotypes = pd.DataFrame(genotypes)
-
-        # Garantir que não haverá uma dupla de chr e pos duplicados
-        DFgenotypes = DFgenotypes.drop_duplicates(subset=["Chr","Position"])
-        DFgenotypes = DFgenotypes.loc[DFgenotypes["Chr"]!="0"]
-        DFgenotypes = DFgenotypes.loc[DFgenotypes['Position']!="0"]
-        DFgenotypes_x = DFgenotypes.loc[DFgenotypes["Chr"]=="X"]
-        DFgenotypes_y = DFgenotypes.loc[DFgenotypes["Chr"]=="Y"]
-        DFgenotypes = DFgenotypes.loc[~DFgenotypes["Chr"].isin(["X","Y"])]
-        # endregion
-       
-        # region casting de string para numerico das colunas chr e pos
-        DFgenotypes["Chr"] = pd.to_numeric(DFgenotypes["Chr"])
-        DFgenotypes["Position"] = pd.to_numeric(DFgenotypes["Position"])
-        DFgenotypes_x["Position"] = pd.to_numeric(DFgenotypes_x["Position"])
-        DFgenotypes_y["Position"] = pd.to_numeric(DFgenotypes_y["Position"])
-        # endregion
-
-        # region ordenação dos dataframes por chr, pos e snp name
-        DFgenotypes = DFgenotypes.sort_values(by=['Chr','Position'])
-        DFgenotypes_x = DFgenotypes_x.sort_values(by=['Position'])
-        DFgenotypes_y = DFgenotypes_y.sort_values(by=['Position'])
-        # endregion
-
-        # region concatenação de dataframes
-        DFgenotypes = pd.concat([DFgenotypes, DFgenotypes_x, DFgenotypes_y])
-        # print(DFgenotypes) 
-        # endregion       
+        
+        DFgenotypes = self.sortAndFilterGenotypes(genotypes) 
 
         # region criação do hash
         hashGenerator = hashlib.md5()
@@ -248,4 +226,51 @@ class extrairGenomaController:
                 "Allele1 - AB": marcador_dict["Allele1 - AB"],
                 "Allele2 - AB": marcador_dict["Allele2 - AB"]
             })
+    # endregion
+
+    # region utils
+    def animalHasGenomaFile(self, animal_name):
+        """
+            Verifica se o animal já possui um arquivo de genoma iniciado para ele
+        """
+        return os.path.isfile(self.getAnimalGenomaFilePath(animal_name))
+
+    def getAnimalGenomaFilePath(self, animal_name):
+        if not(os.path.isdir(f"Computed/animais/{self.mapId}")):
+            os.mkdir(f"Computed/animais/{self.mapId}")
+        return f"Computed/animais/{self.mapId}/{animal_name}.zip"
+
+    def sortAndFilterGenotypes(self, genotypes):
+        DFgenotypes = pd.DataFrame(genotypes)
+
+        # region criação de dataframe e separação de x e y 
+        # Garantir que não haverá uma dupla de chr e pos duplicados
+        DFgenotypes = DFgenotypes.drop_duplicates(subset=["Chr","Position"])
+        DFgenotypes = DFgenotypes.drop_duplicates(subset=["SNP Name"], keep='last')
+        DFgenotypes = DFgenotypes.loc[DFgenotypes["Chr"]!="0"]
+        DFgenotypes = DFgenotypes.loc[DFgenotypes['Position']!="0"]
+        DFgenotypes_x = DFgenotypes.loc[DFgenotypes["Chr"]=="X"]
+        DFgenotypes_y = DFgenotypes.loc[DFgenotypes["Chr"]=="Y"]
+        DFgenotypes_mt = DFgenotypes.loc[DFgenotypes["Chr"]=="MT"]
+        DFgenotypes = DFgenotypes.loc[~DFgenotypes["Chr"].isin(["X","Y", "MT"])]
+        # endregion
+       
+        # region casting de string para numerico das colunas chr e pos
+        DFgenotypes["Chr"] = pd.to_numeric(DFgenotypes["Chr"])
+        DFgenotypes["Position"] = pd.to_numeric(DFgenotypes["Position"])
+        DFgenotypes_x["Position"] = pd.to_numeric(DFgenotypes_x["Position"])
+        DFgenotypes_y["Position"] = pd.to_numeric(DFgenotypes_y["Position"])
+        DFgenotypes_mt["Position"] = pd.to_numeric(DFgenotypes_mt["Position"])
+        # endregion
+
+        # region ordenação dos dataframes por chr, pos e snp name
+        DFgenotypes = DFgenotypes.sort_values(by=['Chr','Position'])
+        DFgenotypes_x = DFgenotypes_x.sort_values(by=['Position'])
+        DFgenotypes_y = DFgenotypes_y.sort_values(by=['Position'])
+        DFgenotypes_mt = DFgenotypes_mt.sort_values(by=['Position'])
+        # endregion
+
+        DFgenotypes = pd.concat([DFgenotypes, DFgenotypes_x, DFgenotypes_y, DFgenotypes_mt])
+
+        return DFgenotypes
     # endregion
