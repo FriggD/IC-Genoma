@@ -113,14 +113,7 @@ class gerarDataset:
             if mapa_idx == 0:
                 BASEDADOS = pd.DataFrame(animaisGenArr, index=animaisArr, columns=marcadoresArr).filter(self.baseDados['marcadores'])
             else:
-                BASEDADOS = pd.concat(
-                    [
-                        BASEDADOS, 
-                        pd.DataFrame(animaisGenArr, index=animaisArr, columns=marcadoresArr) \
-                            .filter(self.baseDados['marcadores']) \
-                            [BASEDADOS.columns.tolist()] 
-                    ]                             
-                )
+                BASEDADOS = pd.concat([BASEDADOS, pd.DataFrame(animaisGenArr, index=animaisArr, columns=marcadoresArr).filter(self.baseDados['marcadores'])])
 
         print(BASEDADOS.info())
         print(BASEDADOS.T)

@@ -5,6 +5,8 @@ import csv
 import src.database.GenomaDB
 
 from src.controllers.extrairGenoma import extrairGenomaController as extGenController
+from src.controllers.dadosAnalyticsController import dadosAnalyticsController
+from src.controllers.gerarDataset import gerarDataset
 
 #Classe de entrada
 class App:
@@ -19,11 +21,13 @@ class App:
     def menu(self):
         opt = 1
         while opt != 0:
-            print("\n\n\n\n\n##### MENU:")
+            print("\n\n##### MENU:")
             print("### O que você quer fazer? ")
 
-            print(" # ( 0 ): Sair do Programa")
-            print(" # ( 1 ): Extrair Genoma")
+            print("  # ( 0 ): Sair do Programa")
+            print("  # ( 1 ): Extrair Genoma")
+            print("  # ( 2 ): Resumo dos dados")
+            print("  # ( 3 ): Construir base de dados")
             # print(" # ( 2 ): Converter .txt para .csv (pasta inteira)")
             # print(" # ( 3 ): Importar attributos de animais")
             # print(" # ( 4 ): Gerar dataset Biotipo")
@@ -36,6 +40,11 @@ class App:
             if opt == 1:
                 print("Aqui você está extraindo Genoma!")
                 extGenController()
+            elif opt == 2:
+                print("Criando resumo de dados...")      
+                dadosAnalyticsController()         
+            elif opt == 3:
+                gerarDataset() 
                 
                 # self.extrairGenoma()
             # elif opt == 2:
