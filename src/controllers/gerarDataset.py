@@ -60,7 +60,8 @@ class gerarDataset:
                 'mapas': comb, 
                 'base': comb_name, 
                 'animais': animais_count, 
-                'marcadores': [marcador.snp for marcador in marcadores]
+                'marcadores': marcadores,
+                'snpArr': [marcador.snp for marcador in marcadores]
             })
             # return possiveisDatasets[0]
             print(f"    # ( {j} ): {comb_name:<25}; nº animais: {animais_count:<6}; nº marcadores: {len(marcadores):<6}")
@@ -111,19 +112,16 @@ class gerarDataset:
                 # endregion
 
             if mapa_idx == 0:
-                BASEDADOS = pd.DataFrame(animaisGenArr, index=animaisArr, columns=marcadoresArr).filter(self.baseDados['marcadores'])
+                BASEDADOS = pd.DataFrame(animaisGenArr, index=animaisArr, columns=marcadoresArr).filter(self.baseDados['snpArr'])
             else:
                 BASEDADOS = pd.concat(
                     [
                         BASEDADOS, 
                         pd.DataFrame(animaisGenArr, index=animaisArr, columns=marcadoresArr) \
-                            .filter(self.baseDados['marcadores']) \
-                            [BASEDADOS.columns.tolist()] 
+                            .filter(self.baseDados['snpArr']) \
+                            [BASEDADOS.columns.tolist()] # Força a ordenação padrão desde o primeiro registro
                     ]                             
                 )
-
-        print(BASEDADOS.info())
-        print(BASEDADOS.T)
 
         baseDados = BaseDados.create(
             uuid= uuid.uuid4().hex,
@@ -133,7 +131,11 @@ class gerarDataset:
             animais= self.baseDados['animais']
         )
 
-        BASEDADOS.T.to_pickle(self.getBaseDadosFilePath(baseDados), compression='zip')       
+        BASEDADOS.T.to_pickle(self.getBaseDadosFilePath(baseDados)+'.zip', compression='zip')     
+
+        mapa = pd.DataFrame([i.__dict__ for i in self.baseDados['marcadores'] ]).filter(['snp', 'position','chromossome'])
+        mapa.to_pickle(self.getBaseDadosFilePath(baseDados)+'_mapa.zip', compression='zip')     
+
         session.commit()
 
     def getAnimalGenomaFilePath(self, animal_name, mapa_id):
@@ -145,7 +147,7 @@ class gerarDataset:
     def getBaseDadosFilePath(self, baseDados):
         if not(os.path.isdir(f"Computed/bases")):
             os.mkdir(f"Computed/bases")
-        return f"Computed/bases/{baseDados.uuid}.zip"
+        return f"Computed/bases/{baseDados.uuid}"
     
 
 

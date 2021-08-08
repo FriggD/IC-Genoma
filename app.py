@@ -7,6 +7,7 @@ import src.database.GenomaDB
 from src.controllers.extrairGenoma import extrairGenomaController as extGenController
 from src.controllers.dadosAnalyticsController import dadosAnalyticsController
 from src.controllers.gerarDataset import gerarDataset
+from src.controllers.Phasing import Phasing
 
 #Classe de entrada
 class App:
@@ -28,6 +29,7 @@ class App:
             print("  # ( 1 ): Extrair Genoma")
             print("  # ( 2 ): Resumo dos dados")
             print("  # ( 3 ): Construir base de dados")
+            print("  # ( 4 ): Preparar base de dados para imputação (Phasing)")
             # print(" # ( 2 ): Converter .txt para .csv (pasta inteira)")
             # print(" # ( 3 ): Importar attributos de animais")
             # print(" # ( 4 ): Gerar dataset Biotipo")
@@ -45,6 +47,8 @@ class App:
                 dadosAnalyticsController()         
             elif opt == 3:
                 gerarDataset() 
+            elif opt == 4:
+                Phasing() 
                 
                 # self.extrairGenoma()
             # elif opt == 2:

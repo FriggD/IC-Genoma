@@ -64,7 +64,7 @@ class Mapa_marcador(BaseModel):
 
 class BaseDados(BaseModel):
     __tablename__ = "BaseDados"
-    __repr_attrs__ = ['snp', 'mapa_id', 'chromossome', 'position']  
+    __repr_attrs__ = ['nome', 'tipo', 'marcadores', 'animais', 'created_at']  
 
     uuid = Column('uuid', String(32), primary_key=True)
     nome = Column(String(150))
