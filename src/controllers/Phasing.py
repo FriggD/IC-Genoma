@@ -31,16 +31,26 @@ class Phasing:
         self.maxIndividualMissingFreq = self.getMaxIndividualMissingFreq()
 
         self.phase()
+        # print(self.base)
+        # print(self.mapa)
 
     # region Métodos principais
     def phase(self):
         self.selectMarkers()
         self.selectIndividuals()
-        print("Marcadores Removidos: ", self.rejectedMarkers)
-        print('Animais Removidos:', self.rejectedIndividuals)
+
+        # print("Marcadores Removidos: ", self.rejectedMarkers)
+        # print('Animais Removidos:', self.rejectedIndividuals)
+
+        self.sepChr()
+        self.getChrLegends()
+
+        
+        self.baseDados.update(tipo='phased')
+        session.commit()
+
         # print(self.base)
         # print(self.mapa)
-
     
 
     def selectMarkers(self):
@@ -59,6 +69,7 @@ class Phasing:
             else:
                 self.rejectedMarkers.append(rowIndex)
 
+        self.mapa = self.mapa.loc[self.mapa['snp'].isin(self.selectedMarkers)]
         self.base = self.base.loc[self.selectedMarkers]
 
 
@@ -78,18 +89,86 @@ class Phasing:
                 self.rejectedIndividuals.append(rowIndex)
 
         self.base = self.base.T.loc[self.selectedIndividuals].T
+
+    def getChrLegends(self):
+        for chr in self.base:           
+
+            chr_legend = []
+            for index, [snp, row] in enumerate(chr['genotypes'].iterrows()):
+                alleles_count = [0, 0, 0]              
+                alleles = ['', '']
+
+                for animal_id, value in row.items():
+                    for al in value.split('|'):
+
+                        if al == alleles[0] or alleles[0] == '':
+                            alleles[0] = al
+                            alleles_count[0] += 1
+                        elif al == alleles[1] or alleles[1] == '':
+                            alleles[1] = al
+                            alleles_count[1] += 1
+                        elif al == '-':
+                            alleles_count[2] += 1
+                        else:
+                            print("DEU MERDA MANO!!!!!!")
+                            sleep(10)
+
+                    # print(f'{snp} - {animal_id} - {value}')
+                    # sleep(1)
+                missing = alleles_count[2]
+                if alleles_count[0] >= alleles_count[1]:
+                    a1 = alleles[0]
+                    a2 = alleles[1]
+                    maf = alleles_count[1] / (alleles_count[0] + alleles_count[1])
+                else:
+                    a1 = alleles[1]
+                    a2 = alleles[0]
+                    maf = alleles_count[0] / (alleles_count[0] + alleles_count[1])
+
+                pos = chr['mapa'].iloc[index]['position']
+                chr_legend.append(['snp', pos, a1, a2, missing, maf])
+                # print(f'{snp}, {pos}, {alleles}, {alleles_count}, {a1}, {a2}, {maf}')
+
+            # Guarda a lenda do chr como pickle
+            pd.DataFrame(chr_legend, columns=['snp', 'position', 'a1', 'a2', 'missing', 'MAF']) \
+                .to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_legend.zip', compression='zip')   
+
+        pass
+
+    def sepChr(self):
+        # Para cada cromossomo, identificar os marcadores que pertencem a ele
+        #   Filtrar da base de dados por essa lista de marcadores
+        aux_db = []
+        for chr in self.chrArr:
+            mapa_chr = (self.mapa.loc[self.mapa['chromossome'] == chr])
+            marcadores_chr = mapa_chr['snp'].tolist()
+
+            base = self.base.loc[self.base.index.isin(marcadores_chr)]
+            aux_db.append({
+                'chr': chr,
+                'genotypes': base,
+                'mapa': mapa_chr
+            })
+
+            # Gravar o mapa do chr com pickle
+            mapa_chr.to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr)+'_mapa.zip', compression='zip')   
+
+            # Gravar a base do chr com Pickle
+            base.to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr)+'_genotypes.zip', compression='zip')   
+
+        self.base = aux_db
     # endregion
 
     # region Utils
     def getBase(self):
         filepath = self.getBaseDadosFilePath(self.baseDados)
-        self.base = pd.read_pickle(filepath+'.zip', compression='zip')
-        self.mapa = pd.read_pickle(filepath+'_mapa.zip', compression='zip')
+        self.base = pd.read_pickle(filepath+'/genotypes.zip', compression='zip')
+        self.mapa = pd.read_pickle(filepath+'/mapa.zip', compression='zip')
         self.chrArr = self.mapa['chromossome'].unique()
 
     def getBaseDadosFilePath(self, baseDados):
-        if not(os.path.isdir(f"Computed/bases")):
-            os.mkdir(f"Computed/bases")
+        if not(os.path.isdir(f"Computed/bases/{baseDados.uuid}")):
+            os.mkdir(f"Computed/bases/{baseDados.uuid}")
         return f"Computed/bases/{baseDados.uuid}"
     # endregion
     

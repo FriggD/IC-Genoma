@@ -131,10 +131,10 @@ class gerarDataset:
             animais= self.baseDados['animais']
         )
 
-        BASEDADOS.T.to_pickle(self.getBaseDadosFilePath(baseDados)+'.zip', compression='zip')     
+        BASEDADOS.T.to_pickle(self.getBaseDadosFilePath(baseDados)+'/genotypes.zip', compression='zip')     
 
         mapa = pd.DataFrame([i.__dict__ for i in self.baseDados['marcadores'] ]).filter(['snp', 'position','chromossome'])
-        mapa.to_pickle(self.getBaseDadosFilePath(baseDados)+'_mapa.zip', compression='zip')     
+        mapa.to_pickle(self.getBaseDadosFilePath(baseDados)+'/mapa.zip', compression='zip')     
 
         session.commit()
 
@@ -145,8 +145,8 @@ class gerarDataset:
 
     
     def getBaseDadosFilePath(self, baseDados):
-        if not(os.path.isdir(f"Computed/bases")):
-            os.mkdir(f"Computed/bases")
+        if not(os.path.isdir(f"Computed/bases/{baseDados.uuid}")):
+            os.mkdir(f"Computed/bases/{baseDados.uuid}")
         return f"Computed/bases/{baseDados.uuid}"
     
 
