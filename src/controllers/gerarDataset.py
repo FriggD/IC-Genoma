@@ -89,13 +89,19 @@ class gerarDataset:
         animais = Animal_mapa.where(mapa_id__in=list(map(lambda x: x.id, self.baseDados['mapas']))).order_by(Animal_mapa.mapa_id).all()
         mapas_animaisArr = [dict({k: list(mapa)}) for k, mapa in groupby(animais, attrgetter('mapa_id'))]
 
-        for mapa_idx, _ in enumerate(mapas_animaisArr):
+        for mapa_idx, m in enumerate(mapas_animaisArr):
             animaisGenArr = []
             animaisArr = []
             marcadoresArr = []
 
-            for animal_idx, animal in enumerate(tqdm(animais)):
-                # print(f'{animal_idx} / {len(animais)}')
+            m_id = list(m)[0] 
+            animal_idx = -1
+            for animal in tqdm(animais):
+
+                if animal.mapa_id != m_id:
+                    continue
+                else:
+                    animal_idx += 1
 
                 filepath = self.getAnimalGenomaFilePath(animal.animal_id, animal.mapa_id)
                 animal_genotypes = pd.read_pickle(filepath, compression='zip')
@@ -103,10 +109,11 @@ class gerarDataset:
                 # region                              
                 animal_x_DF = pd.DataFrame([{'snp': genotype['SNP Name'], animal.animal_id: (f"{genotype['Allele1 - Forward']}|{genotype['Allele2 - Forward']}")} for _, genotype in animal_genotypes.iterrows()])
                 animal_x_DF.set_index('snp', inplace=True)
-                if animal_idx == 0: marcadoresArr = animal_x_DF.T.columns
+                marcadoresArr = animal_x_DF.T.columns
                 animaisArr.append(animal.animal_id)
               
                 animaisGenArr.append(animal_x_DF.T.values.tolist()[0])
+
                 if animal_idx > 2:
                     break
                 # endregion

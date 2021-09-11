@@ -27,6 +27,7 @@ class Phasing:
         self.baseDados = self.SelecionarUnphased()
         self.getBase()
 
+
         self.maxMarkerMissingFreq = self.getMaxMarkerMissingFreq()
         self.maxIndividualMissingFreq = self.getMaxIndividualMissingFreq()
 
@@ -39,13 +40,14 @@ class Phasing:
         self.selectMarkers()
         self.selectIndividuals()
 
-        # print("Marcadores Removidos: ", self.rejectedMarkers)
-        # print('Animais Removidos:', self.rejectedIndividuals)
+        print("Marcadores: ", len(self.selectedMarkers))
+        print('Animais:', len(self.selectedIndividuals))
 
         self.sepChr()
         self.getChrLegends()
-
+        self.getHaplotypes()
         
+        # Atualiza a base de dados como Phased
         self.baseDados.update(tipo='phased')
         session.commit()
 
@@ -91,13 +93,16 @@ class Phasing:
         self.base = self.base.T.loc[self.selectedIndividuals].T
 
     def getChrLegends(self):
-        for chr in self.base:           
+        for chr_idx, chr in enumerate(self.base):           
 
             chr_legend = []
+            invalid_snps = []
+            valid_snps = []
             for index, [snp, row] in enumerate(chr['genotypes'].iterrows()):
                 alleles_count = [0, 0, 0]              
                 alleles = ['', '']
 
+                valid_snp = True     
                 for animal_id, value in row.items():
                     for al in value.split('|'):
 
@@ -110,30 +115,81 @@ class Phasing:
                         elif al == '-':
                             alleles_count[2] += 1
                         else:
-                            print("DEU MERDA MANO!!!!!!")
-                            sleep(10)
+                            valid_snp = False
+                            invalid_snps.append(snp)
+                            break  
+                    if not(valid_snp):
+                        break
 
-                    # print(f'{snp} - {animal_id} - {value}')
-                    # sleep(1)
-                missing = alleles_count[2]
-                if alleles_count[0] >= alleles_count[1]:
-                    a1 = alleles[0]
-                    a2 = alleles[1]
-                    maf = alleles_count[1] / (alleles_count[0] + alleles_count[1])
-                else:
-                    a1 = alleles[1]
-                    a2 = alleles[0]
-                    maf = alleles_count[0] / (alleles_count[0] + alleles_count[1])
+                if valid_snp:
+                    valid_snps.append(snp)
 
-                pos = chr['mapa'].iloc[index]['position']
-                chr_legend.append(['snp', pos, a1, a2, missing, maf])
-                # print(f'{snp}, {pos}, {alleles}, {alleles_count}, {a1}, {a2}, {maf}')
+                    missing = alleles_count[2]
+                    if alleles_count[0] >= alleles_count[1]:
+                        a1 = alleles[0]
+                        a2 = alleles[1]
+                        maf = alleles_count[1] / (alleles_count[0] + alleles_count[1])
+                    else:
+                        a1 = alleles[1]
+                        a2 = alleles[0]
+                        maf = alleles_count[0] / (alleles_count[0] + alleles_count[1])
 
-            # Guarda a lenda do chr como pickle
+                    pos = chr['mapa'].iloc[index]['position']
+                    chr_legend.append([snp, pos, a1, a2, missing, maf])             
+                    # print(f'{snp}, {pos}, {alleles}, {alleles_count}, {a1}, {a2}, {maf}')
+
+            # Remove os snps inválidos do mapa e dos genotypes   
+            chr['mapa']= chr['mapa'].loc[chr['mapa']['snp'].isin(valid_snps)]
+            chr['genotypes'] = chr['genotypes'].loc[valid_snps]
+
+            print(f'SNPS invalidos: {invalid_snps}')
+
+            # Gravar o mapa do chr com pickle
+            chr['mapa'].to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_mapa.zip', compression='zip')   
+
+            # Gravar a base do chr com Pickle
+            chr['genotypes'].to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_genotypes.zip', compression='zip') 
+
+            # Guarda a legenda do chr como pickle
             pd.DataFrame(chr_legend, columns=['snp', 'position', 'a1', 'a2', 'missing', 'MAF']) \
                 .to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_legend.zip', compression='zip')   
 
-        pass
+            # atualiza o base
+            self.base[chr_idx] = chr
+            
+        return
+
+
+    def getHaplotypes(self):
+        # Para cada chr, busque o mapa legenda
+        # Com a legenda, substitua o a1 por 0, e a2 por 1, para cada genótipo
+
+        for chr in self.base:           
+
+            haplotypes_chr = []
+            chr_legend = pd.read_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_legend.zip', compression='zip')
+            for index, [snp, row] in enumerate(chr['genotypes'].iterrows()):
+                a1, a2 = list(chr_legend.iloc[index][['a1', 'a2']])
+                hap_row = []
+
+                for animal_id, value in row.items():
+                    'A|T'
+                    for al in value.split('|'):
+                        if al == a1:
+                            hap_row.append(0)
+                        elif al == a2:
+                            hap_row.append(1)
+                        else:
+                            hap_row.append(5)
+
+                haplotypes_chr.append(hap_row)
+
+            haplotypes_chr = pd.DataFrame(haplotypes_chr)
+
+            # print(haplotypes_chr)
+
+            haplotypes_chr.to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_haplotypes.zip', compression='zip')   
+
 
     def sepChr(self):
         # Para cada cromossomo, identificar os marcadores que pertencem a ele
@@ -148,13 +204,7 @@ class Phasing:
                 'chr': chr,
                 'genotypes': base,
                 'mapa': mapa_chr
-            })
-
-            # Gravar o mapa do chr com pickle
-            mapa_chr.to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr)+'_mapa.zip', compression='zip')   
-
-            # Gravar a base do chr com Pickle
-            base.to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr)+'_genotypes.zip', compression='zip')   
+            })              
 
         self.base = aux_db
     # endregion
