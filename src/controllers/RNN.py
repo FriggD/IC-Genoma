@@ -3,15 +3,20 @@
 # from src.helpers.logger import logger
 
 # import os
+import math
 import pandas as pd
+import numpy as np
+import pickle
 from random import random, randint
 from time import sleep
 from math import floor
+from sklearn.model_selection import train_test_split
 
 from keras.models import Sequential
 from keras.layers import LSTM
 from keras.layers import Dense
 from keras.layers import Dropout
+from sklearn.metrics import mean_squared_error
 # import sqlalchemy_mixins
 # import hashlib
 # from tqdm import tqdm
@@ -19,11 +24,11 @@ from keras.layers import Dropout
 
 class RNN:
 
-    timeSteps = 500
+    data_files = ('Computed/imputation/data_x.zip', 'Computed/imputation/data_y.zip')
+    look_back = 100
     samples_count = 0
 
     def __init__(self):
-
 
         print("\n### O que você quer fazer? ")
         print("  # ( 0 ): Voltar")
@@ -32,115 +37,93 @@ class RNN:
         opt = int(input("# Opção: "))
 
         if opt == 1:
-            self.prep_db()
+            self.create_dataset()
         if opt == 2:
             self.load_db()
 
-        print(self.DATA_X.shape)
+        # print(self.DATA_X.shape)
 
+        self.create_dataset()
         self.train()
+        
+        # self.train()
 
-    # region Carregando os dados
-    def prep_db(self, missingProb=0.3):
-        base = pd.read_pickle(
-            'Computed/bases/a509466ad9104985a5bb3f7c686c5e36/chr_1_haplotypes.zip', compression='zip').T.ix[:, :((self.timeSteps*2) - 1)]
+    def create_dataset(self):
+        look_back = self.look_back
 
-        mask = []
-        for step in range(0, int(base.shape[1]/2)):
-            if step > 10:
-                mask.append(random() > missingProb)
-            else:
-                mask.append(True)
+        dataset = pd.read_pickle('Computed/bases/a509466ad9104985a5bb3f7c686c5e36/chr_1_haplotypes.zip', compression='zip').T.iloc[:, :look_back]
+        dataX, dataY = [], []
 
-        DATA_X = []
-        DATA_Y = []
+        a = dataset.iloc[:, :look_back-2]
+        dataX.append(a)
+        dataY.append(dataset.iloc[:, look_back-2:])
 
-        for row_idx, row in base.iterrows():
-            print(row_idx)
-            item0 = 0
-            sample_x = []
-            sample_y = []
-            for item_idx, item in row.items():
-                if item_idx % 2 == 0:
-                    if not mask[int(item_idx/2)]:
-                        sample_x.append([-1, -1])
-                    else:
-                        sample_x.append([item0, item])
+        dataX = np.array(dataX).reshape(217, look_back-2)
+        dataY = np.array(dataY).reshape(217, 2)
 
-                    sample_y.append([item0, item])
-                else:
-                    item0 = item
+        with open(self.data_files[0],'wb') as f: pickle.dump(dataX, f)
+        with open(self.data_files[1],'wb') as f: pickle.dump(dataY, f)
 
-            DATA_X.append(pd.DataFrame(sample_x))
-            DATA_Y.append(pd.DataFrame(sample_y))
-
-        self.DATA_X = pd.DataFrame(DATA_X)
-        self.DATA_Y = pd.DataFrame(DATA_Y)
-
-        self.DATA_X.drop(self.DATA_X.tail(1).index, inplace=True)
-        self.DATA_Y.drop(self.DATA_Y.head(1).index, inplace=True)        
-
-        self.samples_count = self.DATA_X.shape[0]
-
-        self.DATA_X.to_pickle(
-            'Computed/imputation/data_x.zip', compression='zip')
-        self.DATA_Y.to_pickle(
-            'Computed/imputation/data_y.zip', compression='zip')
+        self.data_X = dataX
+        self.data_Y = dataY        
 
     def load_db(self):
-        self.DATA_X = pd.read_pickle(
-            'Computed/imputation/data_x.zip', compression='zip')
-        self.DATA_Y = pd.read_pickle(
-            'Computed/imputation/data_y.zip', compression='zip')
-        self.samples_count = DATA_X.shape[0]
-        
+        with open(self.data_files[0],'rb') as f: self.data_X = pickle.load(f)
+        with open(self.data_files[1],'rb') as f: self.data_Y = pickle.load(f)        
     # endregion
 
-    def getData(self, typ='train', train_rel=0.99):
-        if typ == 'train':
-            minVal = 0
-            maxVal = floor(self.samples_count*train_rel) - 1
-        else:
-            minVal = floor(self.samples_count*train_rel) - 1
-            maxVal = self.samples_count - 1
-
-        random_sample = randint(minVal, maxVal)
-        # print(minVal, maxVal, random_sample)
-
-        X = self.DATA_X.iloc[random_sample]
-        y = self.DATA_Y.iloc[random_sample]
-
-        X = X[0].values
-        y = y[0].values        
-
-        X = X.reshape(len(X), 2, 1)
-        y = y.reshape(len(y), 2)
-
-        return X, y
-
     def train(self):
-        n_timeSteps = self.timeSteps
+        x_train, x_test, y_train, y_test = train_test_split(self.data_X, self.data_Y, test_size=0.3, random_state=4)
+        print('Original: ', self.data_X.shape, self.data_Y.shape)  
+
+        x_train = np.reshape(x_train, (x_train.shape[0], 1, x_train.shape[1]))
+        x_test = np.reshape(x_test, (x_test.shape[0], 1, x_test.shape[1]))  
+        print('Treino: ', x_train.shape, y_train.shape)
+        print('Teste: ', x_test.shape, y_test.shape)        
+
 
         # define model
         model = Sequential()
-        model.add(LSTM(128, activation='relu', input_shape=(2, 1), batch_input_shape=(1, 2, 1), return_sequences=True, stateful=True))
-        # model.add(LSTM(128, activation='relu', input_shape=(2, 1), stateful=True, batch_input_shape=(1, 2, 1)))
-        model.add(Dropout(0.1))
-        model.add(LSTM(128, return_sequences=True, activation='relu', stateful=True))
-        model.add(Dropout(0.1))
-        model.add(LSTM(64, activation='relu', stateful=True))
-        model.add(Dropout(0.1))
-        model.add(Dense(2, activation='tanh'))
+        model.add(LSTM(128, activation='relu', input_shape=(1, self.look_back-2), return_sequences=True))
+        # model.add(LSTM(128, activation='relu', input_shape=(1, self.look_back-2)))
+        model.add(Dropout(0.2))
+        model.add(LSTM(128, activation='relu', return_sequences=True))
+        model.add(Dropout(0.2))
+        model.add(LSTM(64, activation='relu'))
+        # model.add(Dropout(0.2))
+
+        # model.add(Dense(32, activation='relu'))
+        model.add(Dense(2, activation='relu'))
         model.compile(loss='mean_squared_error', optimizer='adam', metrics=['accuracy'])
         # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-                                                                                
-        # fit model                                         
-        for i in range(150):
-            X, y = self.getData()
-            model.fit(X, y, epochs=1, batch_size=1, verbose=2)
 
+        alleles, zeros = 0, 0
+        for y in y_train:
+            alleles += 2
+            if y[0] == 0: zeros += 1
+            if y[1] == 0: zeros += 1
+        for y in y_test:
+            alleles += 2
+            if y[0] == 0: zeros += 1
+            if y[1] == 0: zeros += 1
 
-        X, y = self.getData('teste')
-        yhat = model.predict(X, batch_size=1)
-        for i in range(len(X)):
-        	print('Expected', y[i], 'Predicted', yhat[i])
+        print(f"MAF: {(alleles - zeros)/alleles}")
+
+        for i in range(2000):
+            model.fit(x_train, y_train, epochs=1, batch_size=1, verbose=0)
+            
+            testPredict = model.predict(x_test)
+            total, err = 0, 0
+            for idx, predict in enumerate(testPredict):
+                if predict[0] < 0: predict[0] = 0
+                if predict[0] > 1: predict[0] = 1
+                if predict[1] < 0: predict[1] = 0
+                if predict[1] > 1: predict[1] = 1
+                predict[0] = round(predict[0], 0)
+                predict[1] = round(predict[1], 0)
+
+                total += 2
+                if predict[0] != y_test[idx][0]: err +=1
+                if predict[1] != y_test[idx][1]: err +=1
+
+            print("Taxa de acerto: ", round(1 - err/total, 5))
