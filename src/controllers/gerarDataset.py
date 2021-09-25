@@ -114,8 +114,8 @@ class gerarDataset:
               
                 animaisGenArr.append(animal_x_DF.T.values.tolist()[0])
 
-                if animal_idx > 2:
-                    break
+                # if animal_idx > 40:
+                    # break
                 # endregion
 
             if mapa_idx == 0:

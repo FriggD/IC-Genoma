@@ -142,7 +142,7 @@ class Phasing:
             chr['mapa']= chr['mapa'].loc[chr['mapa']['snp'].isin(valid_snps)]
             chr['genotypes'] = chr['genotypes'].loc[valid_snps]
 
-            print(f'SNPS invalidos: {invalid_snps}')
+            # print(f'SNPS invalidos: {invalid_snps}')
 
             # Gravar o mapa do chr com pickle
             chr['mapa'].to_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_mapa.zip', compression='zip')   
@@ -166,23 +166,25 @@ class Phasing:
 
         for chr in self.base:           
 
-            haplotypes_chr = []
+            haplotypes_chr = {}
             chr_legend = pd.read_pickle(self.getBaseDadosFilePath(self.baseDados)+'/chr_'+str(chr['chr'])+'_legend.zip', compression='zip')
             for index, [snp, row] in enumerate(chr['genotypes'].iterrows()):
                 a1, a2 = list(chr_legend.iloc[index][['a1', 'a2']])
                 hap_row = []
 
                 for animal_id, value in row.items():
-                    'A|T'
+                    if index == 0:
+                        haplotypes_chr[animal_id] = []
+
                     for al in value.split('|'):
                         if al == a1:
-                            hap_row.append(0)
-                        elif al == a2:
-                            hap_row.append(1)
+                            haplotypes_chr[animal_id].append(0)
+                        elif al == a2:                            
+                            haplotypes_chr[animal_id].append(1)
                         else:
-                            hap_row.append(5)
+                            haplotypes_chr[animal_id].append(5)
 
-                haplotypes_chr.append(hap_row)
+                # haplotypes_chr.append(hap_row)
 
             haplotypes_chr = pd.DataFrame(haplotypes_chr)
 
@@ -204,7 +206,8 @@ class Phasing:
                 'chr': chr,
                 'genotypes': base,
                 'mapa': mapa_chr
-            })              
+            })  
+            print(f"Cromossomo {chr} possui {len(base)} genotypes")            
 
         self.base = aux_db
     # endregion
