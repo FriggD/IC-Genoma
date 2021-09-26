@@ -48,10 +48,11 @@ class RNN:
         
         # self.train()
 
-    def create_dataset(self):
+    def create_dataset(self, current_allele):
         look_back = self.look_back
 
-        dataset = pd.read_pickle('Computed/bases/a509466ad9104985a5bb3f7c686c5e36/chr_1_haplotypes.zip', compression='zip').T.iloc[:, :look_back]
+        minAllele = 
+        dataset = pd.read_pickle('Computed/bases/a509466ad9104985a5bb3f7c686c5e36/chr_1_haplotypes.zip', compression='zip').T.iloc[:, (current_Allele - look_back):(look_back + current_allele)]
         dataX, dataY = [], []
 
         a = dataset.iloc[:, :look_back-2]
@@ -72,7 +73,7 @@ class RNN:
         with open(self.data_files[1],'rb') as f: self.data_Y = pickle.load(f)        
     # endregion
 
-    def train(self):
+    def train(self, current_allele):
         x_train, x_test, y_train, y_test = train_test_split(self.data_X, self.data_Y, test_size=0.3, random_state=4)
         print('Original: ', self.data_X.shape, self.data_Y.shape)  
 
