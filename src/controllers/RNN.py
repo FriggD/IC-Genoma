@@ -11,7 +11,8 @@ from random import random, randint
 from time import sleep
 from math import floor
 from sklearn.model_selection import train_test_split
-
+import matplotlib.pyplot as plt
+   
 from keras.models import Sequential
 from keras.layers import LSTM
 from keras.layers import Dense
@@ -34,21 +35,28 @@ class RNN:
 
     def __init__(self):
 
-        print("\n### O que você quer fazer? ")
-        print("  # ( 0 ): Voltar")
-        print("  # ( 1 ): Gerar dados de treinamento e teste")
-        print("  # ( 2 ): Carregar dados de treinamento e teste")
-        opt = int(input("# Opção: "))
+        # print("\n### O que você quer fazer? ")
+        # print("  # ( 0 ): Voltar")
+        # print("  # ( 1 ): Gerar dados de treinamento e teste")
+        # print("  # ( 2 ): Carregar dados de treinamento e teste")
+        # opt = int(input("# Opção: "))
 
-        if opt == 1:
-            self.create_dataset()
-        if opt == 2:
-            self.load_db()
+        # if opt == 1:
+        #     self.create_dataset()
+        # if opt == 2:
+        #     self.load_db()
 
         # print(self.DATA_X.shape)
 
-        self.create_dataset()
-        self.train()
+        # self.create_dataset()
+        for i in range(self.look_back+2, self.look_back+50):
+            self.train(i)
+
+        df = pd.DataFrame({'maf':self.accArr, 'acc':self.accArr})
+        df.plot('maf', 'acc', kind='scatter')
+        plt.show()
+
+        df.to_csv('Computed/imputation/result.csv')
 
         # self.train()
 
@@ -56,23 +64,12 @@ class RNN:
         look_back = self.look_back
 
         dataset = pd.read_pickle('Computed/bases/a509466ad9104985a5bb3f7c686c5e36/chr_1_haplotypes.zip',
-                                 compression='zip').T.iloc[:, (current_allele - look_back):current_allele]
+                                 compression='zip').T.iloc[:, (current_allele - look_back):(current_allele+2)]
         dataX, dataY = [], []
 
-        a = dataset.iloc[:, :look_back-2]
-        dataX.append(a)
-        dataY.append(dataset.iloc[:, look_back-2:])
+        self.data_X = np.array(dataset.iloc[:, :look_back])
+        self.data_Y = np.array(dataset.iloc[:, look_back:])
 
-        dataX = np.array(dataX).reshape(217, look_back-2)
-        dataY = np.array(dataY).reshape(217, 2)
-
-        with open(self.data_files[0], 'wb') as f:
-            pickle.dump(dataX, f)
-        with open(self.data_files[1], 'wb') as f:
-            pickle.dump(dataY, f)
-
-        self.data_X = dataX
-        self.data_Y = dataY
 
     def load_db(self):
         with open(self.data_files[0], 'rb') as f:
@@ -85,23 +82,23 @@ class RNN:
         self.create_dataset(current_allele)
 
         x_train, x_test, y_train, y_test = train_test_split(
-            self.data_X, self.data_Y, test_size=0.3, random_state=4)
-        print('Original: ', self.data_X.shape, self.data_Y.shape)
+            self.data_X, self.data_Y, test_size=0.2, random_state=4)
+        # print('Original: ', self.data_X.shape, self.data_Y.shape)
 
         x_train = np.reshape(x_train, (x_train.shape[0], 1, x_train.shape[1]))
         x_test = np.reshape(x_test, (x_test.shape[0], 1, x_test.shape[1]))
-        print('Treino: ', x_train.shape, y_train.shape)
-        print('Teste: ', x_test.shape, y_test.shape)
+        # print('Treino: ', x_train.shape, y_train.shape)
+        # print('Teste: ', x_test.shape, y_test.shape)
 
         # define model
         model = Sequential()
         model.add(LSTM(128, activation='relu', input_shape=(
-            1, self.look_back-2), return_sequences=True))
+            1, self.look_back), return_sequences=True))
         # model.add(LSTM(128, activation='relu', input_shape=(1, self.look_back-2)))
         model.add(Dropout(0.2))
         model.add(LSTM(128, activation='relu', return_sequences=True))
         model.add(Dropout(0.2))
-        model.add(LSTM(64, activation='relu'))
+        model.add(LSTM(128, activation='relu'))
         # model.add(Dropout(0.2))
 
         # model.add(Dense(32, activation='relu'))
@@ -125,32 +122,38 @@ class RNN:
                 zeros += 1
 
         maf = (alleles - zeros)/alleles
-        print(f"MAF: {maf}")
+
+        # Treinamento
+        model.fit(x_train, y_train, epochs=50, batch_size=64, verbose=0)
+
+        # Teste
+        testPredict = model.predict(x_test)
+
+        total, err = 0, 0
+        for idx, predict in enumerate(testPredict):
+            if predict[0] < 0:
+                predict[0] = 0
+            if predict[0] > 1:
+                predict[0] = 1
+            if predict[1] < 0:
+                predict[1] = 0
+            if predict[1] > 1:
+                predict[1] = 1
+            predict[0] = round(predict[0], 0)
+            predict[1] = round(predict[1], 0)
+
+            total += 2
+            if predict[0] != y_test[idx][0]:
+                err += 1
+            if predict[1] != y_test[idx][1]:
+                err += 1
+
+        acc = 1 - err/total
+        print(f"Alelo {current_allele}: MAF: {maf}; Taxa de acerto: {round(acc, 5)}")
+
+        # for i in range(200):
+        #     model.fit(x_train, y_train, epochs=1, batch_size=1, verbose=0)     
+          
+        self.accArr.append(acc)
         self.mafArr.append(maf)
 
-        for i in range(200):
-            model.fit(x_train, y_train, epochs=1, batch_size=1, verbose=0)
-
-            testPredict = model.predict(x_test)
-            total, err = 0, 0
-            for idx, predict in enumerate(testPredict):
-                if predict[0] < 0:
-                    predict[0] = 0
-                if predict[0] > 1:
-                    predict[0] = 1
-                if predict[1] < 0:
-                    predict[1] = 0
-                if predict[1] > 1:
-                    predict[1] = 1
-                predict[0] = round(predict[0], 0)
-                predict[1] = round(predict[1], 0)
-
-                total += 2
-                if predict[0] != y_test[idx][0]:
-                    err += 1
-                if predict[1] != y_test[idx][1]:
-                    err += 1
-
-            acc = 1 - err/total
-            print("Taxa de acerto: ", round(acc, 5))
-        self.accArr.append(acc)
